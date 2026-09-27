@@ -21,6 +21,7 @@ interface ScrapeRequest {
   screenshot?: boolean                   // capture a viewport screenshot, default false
   screenshotFullPage?: boolean           // capture the whole page within fixed canvas limits
   screenshotWaitForSelector?: string     // wait up to 10 seconds for a visible CSS selector
+  screenshotSelector?: string            // capture the first visible matching element
   contentWaitForSelector?: string        // wait before reading browser HTML, independent of response capture
   consoleLogs?: boolean                  // capture browser console messages, default false
   networkLogs?: boolean                  // capture per-request resource timings, default false
@@ -49,6 +50,7 @@ interface ScrapeRequest {
 | `screenshot` | boolean | false    | Capture a base64 JPEG of the viewport on browser tiers (2–4) and return it as `screenshot`. Tier 1 never produces one; use `skipHttp: true` to force a browser attempt                        |
 | `screenshotFullPage` | boolean | false | Capture the whole page when `screenshot: true`, up to 6,000 pixels high and 12 million pixels total. Oversized captures leave `screenshot` unset |
 | `screenshotWaitForSelector` | string | — | Wait up to 10 seconds for a visible CSS selector before capturing a screenshot; a timeout leaves `screenshot` unset |
+| `screenshotSelector` | string | — | Capture the first visible element matching a CSS selector when `screenshot: true`. Element captures keep the 6,000-pixel height, 12-million-pixel canvas and JPEG byte limits. Cannot be combined with `screenshotFullPage` |
 | `contentWaitForSelector` | string | — | On browser tiers, wait up to 10 seconds within the request budget for a visible CSS selector before reading the final HTML. A timeout returns the current HTML. Use `skipHttp: true` to ensure a browser tier is used |
 | `consoleLogs` | boolean | false   | Capture the page's console messages on the browser tiers (2–4) and return them as `consoleLogs`                                                                                                 |
 | `networkLogs` | boolean | false   | Capture per-request resource timings on the browser tiers (2–4) and return them as `networkLogs`                                                                                                |

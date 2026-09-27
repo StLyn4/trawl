@@ -49,7 +49,7 @@ TRAWL exposes a small set of purpose-specific, read-only tools:
 | `read` | Extracting the main page content as Markdown or plain text |
 | `scrape` | Reading the original HTML and scrape metadata |
 | `extract` | Selecting text or attributes from repeated page elements into JSON records |
-| `screenshot` | Rendering a viewport JPEG for visual or multimodal inspection |
+| `screenshot` | Rendering a viewport, full-page or selected-element JPEG |
 | `inspect` | Browser console, network timing and redirect diagnostics |
 | `scrape_url` | Backwards-compatible alias for `scrape` |
 
@@ -100,7 +100,9 @@ Set `fullPage: true` to capture the whole page, limited to 6,000 pixels in heigh
 and 12 million pixels total. Set `waitForSelector` to wait up to 10 seconds for
 a visible CSS selector before capture. All screenshots retain the configured
 capture timeout and 4 MB default output limit. An oversized or failed capture
-returns a tool error.
+returns a tool error. Set `selector` to capture the first visible matching
+element, such as a table or chart, using the same limits. `selector` and
+`fullPage` cannot be combined.
 
 `inspect` returns the bounded diagnostics already collected by TRAWL's browser
 tiers. Credentials, query strings and fragments are stripped from network and

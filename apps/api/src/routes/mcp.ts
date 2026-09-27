@@ -27,6 +27,7 @@ type McpScrapeInput = Pick<
   | "screenshot"
   | "screenshotFullPage"
   | "screenshotWaitForSelector"
+  | "screenshotSelector"
   | "contentWaitForSelector"
   | "consoleLogs"
   | "networkLogs"
@@ -307,11 +308,11 @@ function createServer(poolReady: () => boolean, runScrape: RunScrape): McpServer
     "screenshot",
     {
       title: "Screenshot page",
-      description:
-        "Render a known public URL and return a JPEG. Optionally capture the entire page and wait for a visible CSS selector.",
+      description: "Render a known public URL and return a JPEG of the viewport, full page, or first matching element.",
       inputSchema: z.strictObject({
         ...baseInputShape,
         maxTier: browserTierSchema.optional().describe("Highest browser tier TRAWL may use"),
+        selector: z.string().min(1).max(500).optional().describe("Capture the first visible matching element"),
         fullPage: z
           .boolean()
           .optional()
@@ -326,14 +327,18 @@ function createServer(poolReady: () => boolean, runScrape: RunScrape): McpServer
       outputSchema: { ...metadataSchema, mimeType: z.literal("image/jpeg") },
       annotations: toolAnnotations,
     },
-    async ({ fullPage, waitForSelector, ...input }) => {
+    async ({ selector, fullPage, waitForSelector, ...input }) => {
       try {
+        if (selector && fullPage) {
+          throw new RequestValidationError("selector cannot be combined with fullPage", 400)
+        }
         const result = await runSafe({
           ...input,
           skipHttp: true,
           screenshot: true,
           ...(fullPage === undefined ? {} : { screenshotFullPage: fullPage }),
           ...(waitForSelector === undefined ? {} : { screenshotWaitForSelector: waitForSelector }),
+          ...(selector === undefined ? {} : { screenshotSelector: selector }),
         })
         if (!result.screenshot) throw new ScrapeError("Screenshot capture failed", result.timings)
         return {

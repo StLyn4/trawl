@@ -40,6 +40,25 @@ describe("API request validation", () => {
     )
   })
 
+  test("validates element screenshot selectors and incompatible modes", () => {
+    expect(() =>
+      validateScrapeRequest({ url: "https://example.com", screenshot: true, screenshotSelector: ".chart" }),
+    ).not.toThrow()
+    for (const screenshotSelector of ["", " ", "x".repeat(501), 42]) {
+      expect(() => validateScrapeRequest({ url: "https://example.com", screenshotSelector })).toThrow(
+        RequestValidationError,
+      )
+    }
+    expect(() =>
+      validateScrapeRequest({
+        url: "https://example.com",
+        screenshot: true,
+        screenshotFullPage: true,
+        screenshotSelector: ".chart",
+      }),
+    ).toThrow(RequestValidationError)
+  })
+
   for (const field of [
     "consoleLogs",
     "networkLogs",

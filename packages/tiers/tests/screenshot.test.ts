@@ -116,6 +116,61 @@ describe("capturePageScreenshot", () => {
     expect(screenshotCalls).toHaveLength(0)
   })
 
+  test("captures only the first visible matching element", async () => {
+    const { page, screenshotCalls, selectorCalls } = makePage()
+    const elementCalls: Array<Record<string, unknown>> = []
+    page.locator = (selector: string) => {
+      expect(selector).toBe(".chart")
+      return {
+        filter: (options: { visible: boolean }) => {
+          expect(options.visible).toBe(true)
+          return {
+            first: () => ({
+              boundingBox: async () => ({ x: 0, y: 0, width: 800, height: 600 }),
+              screenshot: async (options: Record<string, unknown>) => {
+                elementCalls.push(options)
+                return JPEG
+              },
+            }),
+          }
+        },
+      }
+    }
+
+    expect(await capturePageScreenshot(page, 4_000, { selector: ".chart" })).toBe(JPEG_BASE64)
+    expect(selectorCalls).toEqual([".chart"])
+    expect(elementCalls[0]).toMatchObject({ type: "jpeg", quality: 60 })
+    expect(screenshotCalls).toHaveLength(0)
+  })
+
+  test("rejects an oversized element before taking its screenshot", async () => {
+    const { page } = makePage()
+    let captured = false
+    page.locator = () => ({
+      filter: () => ({
+        first: () => ({
+          boundingBox: async () => ({ x: 0, y: 0, width: 1920, height: 10_000 }),
+          screenshot: async () => {
+            captured = true
+            return JPEG
+          },
+        }),
+      }),
+    })
+
+    expect(await capturePageScreenshot(page, 4_000, { selector: ".page" })).toBeUndefined()
+    expect(captured).toBeFalse()
+  })
+
+  test("bounds page dimension checks by the remaining request budget", async () => {
+    const { page } = makePage()
+    page.evaluate = async () => new Promise(() => {})
+    const start = performance.now()
+
+    expect(await capturePageScreenshot(page, 20, { fullPage: true, settle: false })).toBeUndefined()
+    expect(performance.now() - start).toBeLessThan(500)
+  })
+
   test("drops screenshots that exceed the 4 MB limit", async () => {
     const { page } = makePage({ image: Buffer.alloc(4_000_001) })
 
@@ -324,6 +379,40 @@ describe("orchestrator", () => {
     expect(result.screenshot).toBe(JPEG_BASE64)
     expect(selectorCalls).toEqual([".ready"])
     expect(screenshotCalls[0].fullPage).toBe(true)
+  })
+
+  test("passes an element selector through the orchestrator", async () => {
+    const { page } = makePage()
+    let captured = false
+    page.locator = (selector: string) => {
+      expect(selector).toBe(".chart")
+      return {
+        filter: () => ({
+          first: () => ({
+            boundingBox: async () => ({ x: 0, y: 0, width: 500, height: 400 }),
+            screenshot: async () => {
+              captured = true
+              return JPEG
+            },
+          }),
+        }),
+      }
+    }
+
+    const result = await scrape(
+      {
+        url: "https://example.com",
+        skipHttp: true,
+        maxTier: 3,
+        maxTimeout: 4_000,
+        screenshot: true,
+        screenshotSelector: ".chart",
+      },
+      depsFor(page),
+    )
+
+    expect(captured).toBeTrue()
+    expect(result.screenshot).toBe(JPEG_BASE64)
   })
 
   test("waits for rendered content before reading the browser HTML", async () => {

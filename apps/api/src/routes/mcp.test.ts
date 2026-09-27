@@ -166,6 +166,38 @@ describe("MCP route", () => {
     })
   })
 
+  test("captures a selected element and rejects a full-page combination", async () => {
+    let received: unknown
+    const app = mcpRoute({
+      poolReady: () => true,
+      runScrape: async (input) => {
+        received = input
+        return { ...baseResult, screenshot: "aGVsbG8=" }
+      },
+    })
+    const selected = await app.handle(
+      rpc("tools/call", {
+        name: "screenshot",
+        arguments: { url: "https://1.1.1.1", selector: ".chart" },
+      }),
+    )
+    expect((await selected.json()).result.content[0].type).toBe("image")
+    expect(received).toEqual({
+      url: "https://1.1.1.1",
+      skipHttp: true,
+      screenshot: true,
+      screenshotSelector: ".chart",
+    })
+
+    const combined = await app.handle(
+      rpc("tools/call", {
+        name: "screenshot",
+        arguments: { url: "https://1.1.1.1", selector: ".chart", fullPage: true },
+      }),
+    )
+    expect((await combined.json()).result.isError).toBe(true)
+  })
+
   test("extracts repeated records with text and attributes", async () => {
     const app = mcpRoute({
       poolReady: () => true,
