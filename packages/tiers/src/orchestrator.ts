@@ -106,6 +106,8 @@ export async function scrape(
   // only via the thrown ScrapeError.
   let blockedEvidence: BlockedEvidence | undefined
   const capture = {
+    screenshotFullPage: req.screenshotFullPage,
+    screenshotWaitForSelector: req.screenshotWaitForSelector,
     consoleLogs: req.consoleLogs,
     networkLogs: req.networkLogs,
     redirectChain: req.redirectChain,

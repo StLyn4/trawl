@@ -69,7 +69,12 @@ reason; response headers, bodies and cookies are excluded.
 
 `screenshot` returns an MCP `image` content block containing a base64 JPEG plus
 structured scrape metadata. A client and its selected model must support image
-tool results to make visual use of it.
+tool results to make visual use of it. It captures the viewport by default.
+Set `fullPage: true` to capture the whole page, limited to 6,000 pixels in height
+and 12 million pixels total. Set `waitForSelector` to wait up to 10 seconds for
+a visible CSS selector before capture. All screenshots retain the configured
+capture timeout and 4 MB default output limit. An oversized or failed capture
+returns a tool error.
 
 `inspect` returns the bounded diagnostics already collected by TRAWL's browser
 tiers. Credentials, query strings and fragments are stripped from network and

@@ -18,12 +18,14 @@ const session: SessionData = { cookies: [], userAgent: "cached-user-agent", save
 
 interface PageStub {
   screenshotCalls: Array<Record<string, unknown>>
+  selectorCalls: string[]
   routePatterns: string[]
   page: any
 }
 
 const makePage = (options: { failScreenshot?: boolean; image?: Buffer } = {}): PageStub => {
   const screenshotCalls: Array<Record<string, unknown>> = []
+  const selectorCalls: string[] = []
   const routePatterns: string[] = []
   const page = {
     url: () => "https://example.com/landed",
@@ -40,6 +42,9 @@ const makePage = (options: { failScreenshot?: boolean; image?: Buffer } = {}): P
       routePatterns.push(pattern)
     },
     waitForLoadState: async () => {},
+    waitForSelector: async (selector: string) => {
+      selectorCalls.push(selector)
+    },
     close: async () => {},
     screenshot: async (opts: Record<string, unknown>) => {
       screenshotCalls.push(opts)
@@ -47,7 +52,7 @@ const makePage = (options: { failScreenshot?: boolean; image?: Buffer } = {}): P
       return options.image ?? JPEG
     },
   }
-  return { screenshotCalls, routePatterns, page }
+  return { screenshotCalls, selectorCalls, routePatterns, page }
 }
 
 const poolHandle = (page: unknown): BrowserHandle =>
@@ -92,6 +97,23 @@ describe("capturePageScreenshot", () => {
     const { page } = makePage({ failScreenshot: true })
 
     expect(await capturePageScreenshot(page)).toBeUndefined()
+  })
+
+  test("captures a bounded full page after a requested selector appears", async () => {
+    const { page, screenshotCalls, selectorCalls } = makePage()
+    page.evaluate = async () => ({ width: 1920, height: 2400 })
+
+    expect(await capturePageScreenshot(page, 4_000, { fullPage: true, waitForSelector: ".loaded" })).toBe(JPEG_BASE64)
+    expect(selectorCalls).toEqual([".loaded"])
+    expect(screenshotCalls[0].fullPage).toBe(true)
+  })
+
+  test("refuses an oversized full-page canvas before capturing", async () => {
+    const { page, screenshotCalls } = makePage()
+    page.evaluate = async () => ({ width: 1920, height: 100_000 })
+
+    expect(await capturePageScreenshot(page, 4_000, { fullPage: true })).toBeUndefined()
+    expect(screenshotCalls).toHaveLength(0)
   })
 
   test("drops screenshots that exceed the 4 MB limit", async () => {
@@ -280,6 +302,28 @@ describe("orchestrator", () => {
         Object.keys(timing).every((key) => ["tier", "status", "durationMs", "reason"].includes(key)),
       ),
     ).toBeTrue()
+  })
+
+  test("passes full-page and selector options through the orchestrator", async () => {
+    const { page, screenshotCalls, selectorCalls } = makePage()
+    page.evaluate = async () => ({ width: 1920, height: 2400 })
+
+    const result = await scrape(
+      {
+        url: "https://example.com",
+        skipHttp: true,
+        maxTier: 3,
+        maxTimeout: 4_000,
+        screenshot: true,
+        screenshotFullPage: true,
+        screenshotWaitForSelector: ".ready",
+      },
+      depsFor(page),
+    )
+
+    expect(result.screenshot).toBe(JPEG_BASE64)
+    expect(selectorCalls).toEqual([".ready"])
+    expect(screenshotCalls[0].fullPage).toBe(true)
   })
 
   test("keeps the outbound policy installed when screenshots are requested", async () => {

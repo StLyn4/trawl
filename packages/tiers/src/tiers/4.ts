@@ -160,7 +160,12 @@ export async function runTier4(
 
     // Shot before the html read so the image and the returned html describe the same
     // moment — the settle wait inside the capture can outlast a slow-clearing challenge.
-    const shot = screenshot ? await capturePageScreenshot(page, maxTimeout - (Date.now() - start)) : undefined
+    const shot = screenshot
+      ? await capturePageScreenshot(page, maxTimeout - (Date.now() - start), {
+          fullPage: capture.screenshotFullPage,
+          waitForSelector: capture.screenshotWaitForSelector,
+        })
+      : undefined
     const evidence = await pageCapture.drain(maxTimeout - (Date.now() - start))
 
     const html = await page.content()
