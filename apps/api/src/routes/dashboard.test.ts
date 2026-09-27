@@ -22,7 +22,7 @@ describe("local metrics dashboard", () => {
     expect(html).not.toContain("sensitive.example")
     expect(html).not.toContain(TOKEN)
     const script = html.match(/<script>([\s\S]*?)<\/script>/)?.[1]
-    expect(script).toBeDefined()
+    if (!script) throw new Error("Dashboard script is missing")
     expect(() => new Function(script)).not.toThrow()
 
     const noAuth = await app.handle(new Request("http://localhost/dashboard/metrics"))
