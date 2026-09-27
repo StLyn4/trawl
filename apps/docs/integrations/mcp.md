@@ -7,7 +7,7 @@ description: Connect any MCP-compatible AI client to TRAWL's scraping tool.
 
 TRAWL has an optional, client-independent Model Context Protocol server. Any AI
 application or agent that supports remote MCP servers over Streamable HTTP can
-connect to it and use its reading, scraping, screenshot and inspection tools.
+connect to it and use its reading, scraping, extraction, screenshot and inspection tools.
 
 This is a scraper, not a web search engine. The caller must already know the URL.
 Search discovery and reranking require a separate provider such as SearXNG; TRAWL
@@ -48,6 +48,7 @@ TRAWL exposes a small set of purpose-specific, read-only tools:
 | --- | --- |
 | `read` | Extracting the main page content as Markdown or plain text |
 | `scrape` | Reading the original HTML and scrape metadata |
+| `extract` | Selecting text or attributes from repeated page elements into JSON records |
 | `screenshot` | Rendering a viewport JPEG for visual or multimodal inspection |
 | `inspect` | Browser console, network timing and redirect diagnostics |
 | `scrape_url` | Backwards-compatible alias for `scrape` |
@@ -66,6 +67,26 @@ includes the final URL, status, winning tier, content type, elapsed time,
 per-tier attempt history, cache use, truncation and non-sensitive CAPTCHA/proxy
 booleans. The attempt history contains only tier, status, duration and an optional
 reason; response headers, bodies and cookies are excluded.
+
+`extract` accepts `fields`, an object of field names mapped to `{ selector,
+attribute? }`. The selector is a CSS selector and returns trimmed text unless an
+HTML attribute is named. Set `itemSelector` to select repeated rows; field
+selectors then run inside each row. Without it, one record is extracted from the
+whole page. Missing elements or attributes become `null`. The tool returns raw
+attribute values, so relative links remain relative. It defaults to 25 records
+and allows up to 100; at most 20 fields, 2 million HTML characters and 100,000
+output characters are processed. For example:
+
+```json
+{
+  "url": "https://example.com/products",
+  "itemSelector": ".product",
+  "fields": {
+    "name": { "selector": "h2" },
+    "link": { "selector": "a", "attribute": "href" }
+  }
+}
+```
 
 `screenshot` returns an MCP `image` content block containing a base64 JPEG plus
 structured scrape metadata. A client and its selected model must support image
