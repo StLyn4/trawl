@@ -209,6 +209,66 @@ describe("MCP route", () => {
     expect((await response.json()).result.structuredContent.items).toEqual([{ title: "Title", missing: null }])
   })
 
+  test("uses a browser and waits for rendered extraction content when requested", async () => {
+    let received: unknown
+    const app = mcpRoute({
+      poolReady: () => true,
+      runScrape: async (input) => {
+        received = input
+        return { ...baseResult, html: "<html><body><div class=card><span>Ready</span></div></body></html>" }
+      },
+    })
+    const response = await app.handle(
+      rpc("tools/call", {
+        name: "extract",
+        arguments: {
+          url: "https://1.1.1.1",
+          waitForSelector: ".card",
+          itemSelector: ".card",
+          fields: { text: { selector: "span" } },
+        },
+      }),
+    )
+    const result = (await response.json()).result
+    expect(result.isError).toBeUndefined()
+    expect(received).toEqual({
+      url: "https://1.1.1.1",
+      skipHttp: true,
+      contentWaitForSelector: ".card",
+    })
+    expect(result.structuredContent.items).toEqual([{ text: "Ready" }])
+  })
+
+  test("rejects rendering when maxTier excludes browser tiers", async () => {
+    const app = mcpRoute({ poolReady: () => true, runScrape: async () => baseResult })
+    const response = await app.handle(
+      rpc("tools/call", {
+        name: "extract",
+        arguments: { url: "https://1.1.1.1", render: true, maxTier: 1, fields: { title: { selector: "h1" } } },
+      }),
+    )
+    expect((await response.json()).result.isError).toBe(true)
+  })
+
+  test("renders extraction without a selector wait when requested", async () => {
+    let received: unknown
+    const app = mcpRoute({
+      poolReady: () => true,
+      runScrape: async (input) => {
+        received = input
+        return { ...baseResult, html: "<html><body><h1>Rendered</h1></body></html>" }
+      },
+    })
+    const response = await app.handle(
+      rpc("tools/call", {
+        name: "extract",
+        arguments: { url: "https://1.1.1.1", render: true, fields: { title: { selector: "h1" } } },
+      }),
+    )
+    expect((await response.json()).result.structuredContent.items).toEqual([{ title: "Rendered" }])
+    expect(received).toEqual({ url: "https://1.1.1.1", skipHttp: true })
+  })
+
   test("rejects extraction limits and malformed selectors", async () => {
     const app = mcpRoute({
       poolReady: () => true,

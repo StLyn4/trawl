@@ -27,6 +27,7 @@ import { installOutboundPolicy, type OutboundUrlValidator } from "../utils/outbo
 import { captureResponse, isHtmlContentType, isTextContentType } from "../utils/response"
 import type { RouteLike } from "../utils/sanitize"
 import { routeContinueOverrides } from "../utils/sanitize"
+import { waitForVisibleSelector } from "../utils/waitForVisibleSelector"
 
 export interface Tier2Result extends TierResult {
   tier: 2
@@ -196,6 +197,9 @@ export async function runTier2(
     // Hold the page open for the capture's settle window before reading anything, so a
     // late XHR the caller is chasing lands in the same evidence as the markup.
     await pageCapture.settle(maxTimeout - (Date.now() - start))
+    if (capture.contentWaitForSelector) {
+      await waitForVisibleSelector(page, capture.contentWaitForSelector, maxTimeout - (Date.now() - start))
+    }
 
     // Shot before the html read so the image and the returned html describe the same
     // moment — the settle wait inside the capture can outlast a slow-clearing challenge.

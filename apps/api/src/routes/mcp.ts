@@ -27,6 +27,7 @@ type McpScrapeInput = Pick<
   | "screenshot"
   | "screenshotFullPage"
   | "screenshotWaitForSelector"
+  | "contentWaitForSelector"
   | "consoleLogs"
   | "networkLogs"
   | "redirectChain"
@@ -258,6 +259,13 @@ function createServer(poolReady: () => boolean, runScrape: RunScrape): McpServer
         "Extract bounded JSON records from a known public page using CSS selectors. Set itemSelector for a repeated list; field selectors are relative to each item.",
       inputSchema: z.strictObject({
         ...baseInputShape,
+        render: z.boolean().optional().describe("Start with a browser tier so JavaScript can render page content"),
+        waitForSelector: z
+          .string()
+          .min(1)
+          .max(500)
+          .optional()
+          .describe("Wait up to 10 seconds for a visible CSS selector before reading browser HTML; implies render"),
         itemSelector: z.string().min(1).max(500).optional().describe("CSS selector matching repeated items"),
         fields: z
           .record(z.string().regex(/^[A-Za-z][A-Za-z0-9_]{0,63}$/), fieldSchema)
@@ -274,9 +282,16 @@ function createServer(poolReady: () => boolean, runScrape: RunScrape): McpServer
       },
       annotations: toolAnnotations,
     },
-    async ({ itemSelector, fields, maxItems = 25, ...input }) => {
+    async ({ render, waitForSelector, itemSelector, fields, maxItems = 25, ...input }) => {
       try {
-        const result = await runSafe(input)
+        if ((render || waitForSelector) && input.maxTier === 1) {
+          throw new RequestValidationError("Browser rendering requires maxTier 2 or higher", 400)
+        }
+        const result = await runSafe({
+          ...input,
+          ...(render || waitForSelector ? { skipHttp: true } : {}),
+          ...(waitForSelector ? { contentWaitForSelector: waitForSelector } : {}),
+        })
         const extracted = extractFields(result.html, itemSelector, fields, maxItems)
         return {
           content: [{ type: "text", text: JSON.stringify(extracted.items) }],

@@ -34,6 +34,9 @@ export interface ScrapeRequest {
   // Browser screenshot options. Ignored unless `screenshot` is true.
   screenshotFullPage?: boolean
   screenshotWaitForSelector?: string
+  // Browser tiers wait up to 10 seconds for a visible element before reading
+  // the final HTML. Independent of response-body capture's waitForSelector.
+  contentWaitForSelector?: string
   // Opt-in browser console capture from the browser tiers (2-4), returned as
   // `ScrapeResult.consoleLogs`. Off by default — no listener is attached without it.
   consoleLogs?: boolean

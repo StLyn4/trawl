@@ -80,6 +80,17 @@ describe("API request validation", () => {
     }
   })
 
+  test("validates browser HTML selector waits independently of response capture", () => {
+    expect(() =>
+      validateScrapeRequest({ url: "https://example.com", skipHttp: true, contentWaitForSelector: ".card" }),
+    ).not.toThrow()
+    for (const contentWaitForSelector of ["", " ", "x".repeat(501), 42]) {
+      expect(() => validateScrapeRequest({ url: "https://example.com", contentWaitForSelector })).toThrow(
+        RequestValidationError,
+      )
+    }
+  })
+
   test("extracts only string URLs for error envelopes", () => {
     expect(requestUrl({ url: "https://example.com" })).toBe("https://example.com")
     expect(requestUrl({ url: 42 })).toBe("")

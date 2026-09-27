@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Allow MCP extraction to render JavaScript pages and wait for visible content before selecting fields (#173).
 - Add bounded full-page screenshots and visible-selector waits to browser screenshot requests and the MCP `screenshot` tool.
 - Add an MCP `extract` tool for bounded, CSS-selected JSON records from known public URLs.
 

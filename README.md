@@ -138,7 +138,7 @@ curl -X POST http://localhost:8191/scrape \
 ### MCP tools (`/mcp`)
 
 Set `MCP_ENABLED=true` to expose TRAWL's client-independent Streamable HTTP tools
-for readable content, HTML, screenshots and browser diagnostics to any
+for readable content, HTML, structured extraction, screenshots and browser diagnostics to any
 MCP-compatible AI application or agent. They load known public URLs; TRAWL does not
 provide web search or ranking. See the
 [MCP integration guide](./apps/docs/integrations/mcp.md).
