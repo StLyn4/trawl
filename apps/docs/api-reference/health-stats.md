@@ -148,6 +148,8 @@ streamed responses are counted when their headers arrive; later stream errors
 are not tracked. Invalid `/scrape` and `/v1` requests and MCP scrape calls
 rejected before the scraper starts appear as failures. WebSocket relays,
 health checks, dashboard requests and MCP protocol discovery are not counted.
+When Prowlarr is the caller, only requests it forwards to the configured
+FlareSolverr proxy reach TRAWL; its direct indexer traffic is outside this view.
 
 The dashboard shows request totals, success rate, average elapsed time, activity
 charts for 15 minutes, 1 hour, 24 hours, 7 days or 30 days, with hover and
