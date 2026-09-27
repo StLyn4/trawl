@@ -75,11 +75,16 @@ selectors then run inside each row. Without it, one record is extracted from the
 whole page. Missing elements or attributes become `null`. The tool returns raw
 attribute values, so relative links remain relative. It defaults to 25 records
 and allows up to 100; at most 20 fields, 2 million HTML characters and 100,000
-output characters are processed. For example:
+output characters are processed. Set `render: true` to start with a browser for
+JavaScript-rendered pages. `waitForSelector` also enables browser rendering and
+waits up to 10 seconds, within the request budget, for a visible element before
+the HTML is read. If it does not appear, extraction runs on the current HTML.
+These options require `maxTier` to be at least 2. For example:
 
 ```json
 {
   "url": "https://example.com/products",
+  "waitForSelector": ".product",
   "itemSelector": ".product",
   "fields": {
     "name": { "selector": "h2" },

@@ -326,6 +326,31 @@ describe("orchestrator", () => {
     expect(screenshotCalls[0].fullPage).toBe(true)
   })
 
+  test("waits for rendered content before reading the browser HTML", async () => {
+    const { page, selectorCalls } = makePage()
+    let rendered = false
+    page.content = async () =>
+      rendered ? PAGE_HTML.replace("</body>", '<div class="card">Ready</div></body>') : PAGE_HTML
+    page.waitForSelector = async (selector: string) => {
+      selectorCalls.push(selector)
+      rendered = true
+    }
+
+    const result = await scrape(
+      {
+        url: "https://example.com",
+        skipHttp: true,
+        maxTier: 3,
+        maxTimeout: 4_000,
+        contentWaitForSelector: ".card",
+      },
+      depsFor(page),
+    )
+
+    expect(selectorCalls).toEqual([".card"])
+    expect(result.html).toContain("Ready")
+  })
+
   test("keeps the outbound policy installed when screenshots are requested", async () => {
     const { page, routePatterns } = makePage()
     const validateOutboundUrl = async () => {}

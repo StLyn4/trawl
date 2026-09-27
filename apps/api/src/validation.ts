@@ -59,6 +59,17 @@ export function validateScrapeRequest(body: unknown): asserts body is ScrapeRequ
       400,
     )
   }
+  if (
+    req.contentWaitForSelector !== undefined &&
+    (typeof req.contentWaitForSelector !== "string" ||
+      !req.contentWaitForSelector.trim() ||
+      req.contentWaitForSelector.length > 500)
+  ) {
+    throw new RequestValidationError(
+      "contentWaitForSelector must be a non-empty CSS selector of at most 500 characters",
+      400,
+    )
+  }
   for (const field of [
     "consoleLogs",
     "networkLogs",
