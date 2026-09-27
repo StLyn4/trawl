@@ -34,6 +34,32 @@ describe("local metrics dashboard", () => {
     store.close()
   })
 
+  test("serves labeled sample data without changing real history", async () => {
+    const store = new MetricsStore()
+    store.record({ source: "native", url: "https://real.example/", statusCode: 200, durationMs: 10 })
+    const app = dashboardRoute("", store, true)
+    const shell = await app.handle(new Request("http://localhost/dashboard?demo=1"))
+    const html = await shell.text()
+    expect(html).toContain('data-demo="true"')
+    expect(html).toContain("DEMO DATA")
+
+    const sampleResponse = await app.handle(new Request("http://localhost/dashboard/metrics?minutes=1440&demo=1"))
+    const sample = await sampleResponse.json()
+    expect(sample.requests).toBeGreaterThan(100)
+    expect(sample.failures).toBeGreaterThan(0)
+    expect(sample.byTier[3].attempts).toBeGreaterThan(0)
+    expect(sample.domains.every((item: { domain: string }) => item.domain.endsWith(".example"))).toBeTrue()
+    const monthResponse = await app.handle(new Request("http://localhost/dashboard/metrics?minutes=43200&demo=1"))
+    expect((await monthResponse.json()).requests).toBeGreaterThan(sample.requests)
+
+    const realResponse = await app.handle(new Request("http://localhost/dashboard/metrics?minutes=1440"))
+    const real = await realResponse.json()
+    expect(real.requests).toBe(1)
+    expect(real.retainedEvents).toBe(1)
+    expect(real.domains[0].domain).toBe("real.example")
+    store.close()
+  })
+
   test("serves a dashboard shell without data and requires bearer auth for JSON", async () => {
     const store = new MetricsStore()
     store.record({ source: "mcp", url: "https://sensitive.example/path?secret=1", statusCode: 502, durationMs: 10 })
@@ -49,10 +75,12 @@ describe("local metrics dashboard", () => {
     expect(() => new Function(script)).not.toThrow()
 
     const noAuth = await app.handle(new Request("http://localhost/dashboard/metrics"))
+    const noDemoAuth = await app.handle(new Request("http://localhost/dashboard/metrics?demo=1"))
     const wrongAuth = await app.handle(
       new Request("http://localhost/dashboard/metrics", { headers: { authorization: "Bearer wrong" } }),
     )
     expect(noAuth.status).toBe(401)
+    expect(noDemoAuth.status).toBe(401)
     expect(wrongAuth.status).toBe(401)
     expect(await wrongAuth.text()).not.toContain("sensitive.example")
     const noStreamAuth = await app.handle(new Request("http://localhost/dashboard/events"))

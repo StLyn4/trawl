@@ -1,6 +1,7 @@
 import { timingSafeEqual } from "node:crypto"
 import { Elysia } from "elysia"
 import { METRICS_DASHBOARD_ENABLED, METRICS_DASHBOARD_TOKEN } from "../config"
+import { demoSnapshot } from "../demoMetrics"
 import { type MetricsStore, metricRanges, metrics } from "../metrics"
 import { dashboardPage } from "./dashboardPage"
 
@@ -20,12 +21,12 @@ export function dashboardRoute(
   if (!secret && !enabled) return app
   const authorized = (header: string | null) => !secret || validToken(header, secret)
   return app
-    .get("/dashboard", ({ set }) => {
+    .get("/dashboard", ({ request, set }) => {
       set.headers["Content-Type"] = "text/html; charset=utf-8"
       set.headers["Cache-Control"] = "no-store"
       set.headers["Content-Security-Policy"] =
         "default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; connect-src 'self'; base-uri 'none'; frame-ancestors 'none'"
-      return dashboardPage(Boolean(secret))
+      return dashboardPage(Boolean(secret), new URL(request.url).searchParams.get("demo") === "1")
     })
     .get("/dashboard/metrics", ({ request, set }) => {
       set.headers["Cache-Control"] = "no-store"
@@ -34,9 +35,10 @@ export function dashboardRoute(
         return { error: "Unauthorized" }
       }
       const value = Number(new URL(request.url).searchParams.get("minutes") || 60)
-      return store.snapshot(
-        metricRanges.includes(value as (typeof metricRanges)[number]) ? (value as (typeof metricRanges)[number]) : 60,
-      )
+      const range = metricRanges.includes(value as (typeof metricRanges)[number])
+        ? (value as (typeof metricRanges)[number])
+        : 60
+      return new URL(request.url).searchParams.get("demo") === "1" ? demoSnapshot(range) : store.snapshot(range)
     })
     .get("/dashboard/events", ({ request, set }) => {
       if (!authorized(request.headers.get("authorization"))) {
