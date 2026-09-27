@@ -129,7 +129,12 @@ function createServer(poolReady: () => boolean, runScrape: RunScrape): McpServer
         ...metadata(result),
         truncated,
         sessionCached: result.sessionCached,
-        timings: result.timings,
+        timings: result.timings.map(({ tier, status, durationMs, reason }) => ({
+          tier,
+          status,
+          durationMs,
+          ...(reason === undefined ? {} : { reason }),
+        })),
         ...(result.captchasSolved ? { captchasSolved: result.captchasSolved } : {}),
         ...(result.proxyUsed === undefined ? {} : { proxyUsed: result.proxyUsed }),
       }

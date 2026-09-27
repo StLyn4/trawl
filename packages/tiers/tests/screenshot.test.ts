@@ -275,6 +275,11 @@ describe("orchestrator", () => {
     expect(result.tier).toBe(3)
     expect(result.screenshot).toBe(JPEG_BASE64)
     expect(result.timings.every((timing) => !("screenshot" in timing))).toBeTrue()
+    expect(
+      result.timings.every((timing) =>
+        Object.keys(timing).every((key) => ["tier", "status", "durationMs", "reason"].includes(key)),
+      ),
+    ).toBeTrue()
   })
 
   test("keeps the outbound policy installed when screenshots are requested", async () => {

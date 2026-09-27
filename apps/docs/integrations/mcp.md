@@ -64,7 +64,8 @@ excerpt, site name and language.
 `scrape` returns at most 50,000 characters of page HTML. Its structured output
 includes the final URL, status, winning tier, content type, elapsed time,
 per-tier attempt history, cache use, truncation and non-sensitive CAPTCHA/proxy
-booleans.
+booleans. The attempt history contains only tier, status, duration and an optional
+reason; response headers, bodies and cookies are excluded.
 
 `screenshot` returns an MCP `image` content block containing a base64 JPEG plus
 structured scrape metadata. A client and its selected model must support image

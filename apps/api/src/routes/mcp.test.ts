@@ -66,7 +66,17 @@ describe("MCP route", () => {
       poolReady: () => true,
       runScrape: async (input) => {
         received = input
-        return { ...baseResult, html: `secret-cookie-${"x".repeat(MCP_HTML_MAX_CHARS)}` }
+        return {
+          ...baseResult,
+          html: `secret-cookie-${"x".repeat(MCP_HTML_MAX_CHARS)}`,
+          timings: [
+            {
+              ...baseResult.timings[0],
+              html: "private-timing-html",
+              responseHeaders: { "set-cookie": "private-timing-cookie" },
+            },
+          ],
+        }
       },
     })
     const response = await app.handle(
@@ -87,6 +97,8 @@ describe("MCP route", () => {
     expect(body.result.content[0].text.length).toBe(MCP_HTML_MAX_CHARS)
     expect(JSON.stringify(body)).not.toContain('cookie"')
     expect(JSON.stringify(body)).not.toContain("secret-agent")
+    expect(JSON.stringify(body)).not.toContain("private-timing-html")
+    expect(JSON.stringify(body)).not.toContain("private-timing-cookie")
   })
 
   test("extracts readable markdown with metadata and a caller-controlled limit", async () => {
