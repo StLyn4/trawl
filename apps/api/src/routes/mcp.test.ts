@@ -140,6 +140,31 @@ describe("MCP route", () => {
     expect(result.structuredContent.mimeType).toBe("image/jpeg")
   })
 
+  test("passes bounded full-page screenshot options to the browser", async () => {
+    let received: unknown
+    const app = mcpRoute({
+      poolReady: () => true,
+      runScrape: async (input) => {
+        received = input
+        return { ...baseResult, screenshot: "aGVsbG8=" }
+      },
+    })
+    const response = await app.handle(
+      rpc("tools/call", {
+        name: "screenshot",
+        arguments: { url: "https://1.1.1.1", fullPage: true, waitForSelector: ".loaded" },
+      }),
+    )
+    expect((await response.json()).result.content[0].type).toBe("image")
+    expect(received).toEqual({
+      url: "https://1.1.1.1",
+      skipHttp: true,
+      screenshot: true,
+      screenshotFullPage: true,
+      screenshotWaitForSelector: ".loaded",
+    })
+  })
+
   test("returns browser diagnostics while redacting URL credentials and query strings", async () => {
     let received: unknown
     const app = mcpRoute({

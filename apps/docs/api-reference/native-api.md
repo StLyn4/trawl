@@ -19,6 +19,8 @@ interface ScrapeRequest {
   headers?: Record<string, string>       // custom headers forwarded to the target
   proxy?: string                         // per-request proxy override for Tier 3/4
   screenshot?: boolean                   // capture a viewport screenshot, default false
+  screenshotFullPage?: boolean           // capture the whole page within fixed canvas limits
+  screenshotWaitForSelector?: string     // wait up to 10 seconds for a visible CSS selector
   consoleLogs?: boolean                  // capture browser console messages, default false
   networkLogs?: boolean                  // capture per-request resource timings, default false
   redirectChain?: boolean                // capture the main document's redirect chain, default false
@@ -44,6 +46,8 @@ interface ScrapeRequest {
 | `headers`    | object  | —        | Custom headers forwarded to the target across all tiers — see [Custom Headers](/api-reference/custom-headers)                                                                                  |
 | `proxy`      | string  | —        | Strict proxy route for this request. HTTP(S) proxies are used by Tier 1 and browser tiers; SOCKS proxies skip Tier 1. Direct Tier 1 and the unproxied Tier 2 cache are never used — see [Configuration § Proxies](/getting-started/configuration#proxies) |
 | `screenshot` | boolean | false    | Capture a base64 JPEG of the viewport on browser tiers (2–4) and return it as `screenshot`. Tier 1 never produces one; use `skipHttp: true` to force a browser attempt                        |
+| `screenshotFullPage` | boolean | false | Capture the whole page when `screenshot: true`, up to 6,000 pixels high and 12 million pixels total. Oversized captures leave `screenshot` unset |
+| `screenshotWaitForSelector` | string | — | Wait up to 10 seconds for a visible CSS selector before capturing a screenshot; a timeout leaves `screenshot` unset |
 | `consoleLogs` | boolean | false   | Capture the page's console messages on the browser tiers (2–4) and return them as `consoleLogs`                                                                                                 |
 | `networkLogs` | boolean | false   | Capture per-request resource timings on the browser tiers (2–4) and return them as `networkLogs`                                                                                                |
 | `redirectChain` | boolean | false | Capture the URLs the main document walked on the browser tiers (2–4) and return them as `redirectChain`                                                                                         |

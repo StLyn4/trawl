@@ -19,7 +19,16 @@ export const MCP_READ_MAX_CHARS = 100_000
 
 type McpScrapeInput = Pick<
   ScrapeRequest,
-  "url" | "maxTimeout" | "maxTier" | "skipHttp" | "screenshot" | "consoleLogs" | "networkLogs" | "redirectChain"
+  | "url"
+  | "maxTimeout"
+  | "maxTier"
+  | "skipHttp"
+  | "screenshot"
+  | "screenshotFullPage"
+  | "screenshotWaitForSelector"
+  | "consoleLogs"
+  | "networkLogs"
+  | "redirectChain"
 >
 type RunScrape = (input: McpScrapeInput) => Promise<ScrapeResult>
 
@@ -241,17 +250,33 @@ function createServer(poolReady: () => boolean, runScrape: RunScrape): McpServer
     {
       title: "Screenshot page",
       description:
-        "Render a known public URL in TRAWL's browser and return a viewport JPEG for visual or multimodal inspection.",
+        "Render a known public URL and return a JPEG. Optionally capture the entire page and wait for a visible CSS selector.",
       inputSchema: z.strictObject({
         ...baseInputShape,
         maxTier: browserTierSchema.optional().describe("Highest browser tier TRAWL may use"),
+        fullPage: z
+          .boolean()
+          .optional()
+          .describe("Capture the entire page, up to 6000 pixels tall and 12 million pixels"),
+        waitForSelector: z
+          .string()
+          .min(1)
+          .max(500)
+          .optional()
+          .describe("Wait up to 10 seconds for a visible CSS selector"),
       }),
       outputSchema: { ...metadataSchema, mimeType: z.literal("image/jpeg") },
       annotations: toolAnnotations,
     },
-    async (input) => {
+    async ({ fullPage, waitForSelector, ...input }) => {
       try {
-        const result = await runSafe({ ...input, skipHttp: true, screenshot: true })
+        const result = await runSafe({
+          ...input,
+          skipHttp: true,
+          screenshot: true,
+          ...(fullPage === undefined ? {} : { screenshotFullPage: fullPage }),
+          ...(waitForSelector === undefined ? {} : { screenshotWaitForSelector: waitForSelector }),
+        })
         if (!result.screenshot) throw new ScrapeError("Screenshot capture failed", result.timings)
         return {
           content: [{ type: "image", data: result.screenshot, mimeType: "image/jpeg" }],

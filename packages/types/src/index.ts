@@ -31,6 +31,9 @@ export interface ScrapeRequest {
   // `ScrapeResult.screenshot`. Off by default — it costs a settle wait and payload
   // size. Tier 1 is a plain HTTP fetch and never produces one.
   screenshot?: boolean
+  // Browser screenshot options. Ignored unless `screenshot` is true.
+  screenshotFullPage?: boolean
+  screenshotWaitForSelector?: string
   // Opt-in browser console capture from the browser tiers (2-4), returned as
   // `ScrapeResult.consoleLogs`. Off by default — no listener is attached without it.
   consoleLogs?: boolean

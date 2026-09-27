@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Add bounded full-page screenshots and visible-selector waits to browser screenshot requests and the MCP `screenshot` tool.
+
 ### Fixed
 
 - Keep tier attempt histories and MCP scrape metadata limited to status, duration and reason, excluding response bodies, headers and cookies.

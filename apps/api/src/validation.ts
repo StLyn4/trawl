@@ -45,6 +45,20 @@ export function validateScrapeRequest(body: unknown): asserts body is ScrapeRequ
   if (req.screenshot !== undefined && typeof req.screenshot !== "boolean") {
     throw new RequestValidationError("screenshot must be a boolean", 400)
   }
+  if (req.screenshotFullPage !== undefined && typeof req.screenshotFullPage !== "boolean") {
+    throw new RequestValidationError("screenshotFullPage must be a boolean", 400)
+  }
+  if (
+    req.screenshotWaitForSelector !== undefined &&
+    (typeof req.screenshotWaitForSelector !== "string" ||
+      !req.screenshotWaitForSelector.trim() ||
+      req.screenshotWaitForSelector.length > 500)
+  ) {
+    throw new RequestValidationError(
+      "screenshotWaitForSelector must be a non-empty CSS selector of at most 500 characters",
+      400,
+    )
+  }
   for (const field of [
     "consoleLogs",
     "networkLogs",
