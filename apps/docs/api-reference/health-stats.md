@@ -145,8 +145,9 @@ and the MITM proxy. Direct proxy HTTP responses count as Tier 0; responses that
 escalate count once under the scraper result. Tier attempts exclude skipped
 tiers. HTTP responses with status 400 or higher count as failures. Direct
 streamed responses are counted when their headers arrive; later stream errors
-are not tracked. WebSocket relays and requests rejected before the scraper starts
-are not counted.
+are not tracked. Invalid `/scrape` and `/v1` requests and MCP scrape calls
+rejected before the scraper starts appear as failures. WebSocket relays,
+health checks, dashboard requests and MCP protocol discovery are not counted.
 
 The dashboard shows request totals, success rate, average elapsed time, activity
 charts for 15 minutes, 1 hour, 24 hours, 7 days or 30 days, with hover and
