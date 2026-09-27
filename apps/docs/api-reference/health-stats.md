@@ -131,11 +131,14 @@ endpoint is not currently provided.
 
 ## Local metrics dashboard
 
-Set `METRICS_DASHBOARD_TOKEN` to a random value of at least 32 characters to
-enable `GET /dashboard` and `GET /dashboard/metrics`. Open `http://localhost:8191/dashboard`
-and enter the token. The JSON endpoint requires `Authorization: Bearer <token>`;
-unauthorized requests receive HTTP 401. Both responses are marked `no-store`.
-Keep the dashboard on a trusted network and use HTTPS when connecting remotely.
+Set `METRICS_DASHBOARD_ENABLED=true` to enable the dashboard without a token
+when the published port is bound to `127.0.0.1`. For any wider access, set
+`METRICS_DASHBOARD_TOKEN` to a random value of at least 32 characters instead.
+The token protects `GET /dashboard/metrics` and `GET /dashboard/events` with
+`Authorization: Bearer <token>`; unauthorized requests receive HTTP 401. A
+configured token takes precedence over the tokenless setting. Open
+`http://localhost:8191/dashboard` to view the page. Keep the dashboard on a
+trusted network and use HTTPS when connecting remotely.
 
 The dashboard counts completed scraper operations from `/scrape`, `/v1`, MCP,
 and the MITM proxy. Direct proxy HTTP responses count as Tier 0; responses that
@@ -146,22 +149,24 @@ are not tracked. WebSocket relays and requests rejected before the scraper start
 are not counted.
 
 The dashboard shows request totals, success rate, average elapsed time, activity
-charts for 15 minutes, 1 hour, 24 hours, 7 days or 30 days, and tier, source,
-and failure-cause breakdowns. It also lists the latest 100 completed requests
+charts for 15 minutes, 1 hour, 24 hours, 7 days or 30 days, with hover and
+keyboard details for each time bucket, plus tier, source and failure-cause
+breakdowns. It also lists the latest 100 completed requests
 with timestamps, domains, duration, status and outcome, plus the latest 50 failures.
-The authenticated `GET /dashboard/events` stream signals new activity immediately;
+The `GET /dashboard/events` stream signals new activity immediately;
 the page refreshes its snapshot when an event arrives and falls back to periodic
 refresh. The live view can be paused or refreshed manually. Export JSON downloads
 the selected snapshot. Categories are `blocked`, `timeout`, `capacity`, `network`,
 `http` and `internal`; they are best-effort classifications.
 
-Metrics collection is disabled until the token is set. By default, history is
-stored in SQLite at `/data/metrics/trawl.sqlite`; set `METRICS_DB_PATH` to change
+Metrics collection is disabled until a token or the explicit tokenless setting
+is set. By default, history is stored in SQLite at `/data/metrics/trawl.sqlite`;
+set `METRICS_DB_PATH` to change
 it. Docker Compose mounts a named volume at `/data/metrics`. History survives
 container restarts and is retained for 30 days, with a cap of 50,000 completed
 request records. All displayed counts are for the selected period. URL paths,
 queries, fragments, credentials, raw error messages, HTML, headers and cookies
 are never stored. No metrics are sent to a remote server. The history begins
 when persistent collection is first enabled; old Docker logs are not imported.
-The existing public `/stats` response contains only browser
-pool capacity and does not expose target hostnames.
+The existing public `/stats` response contains only browser pool capacity and
+does not expose target hostnames.

@@ -411,7 +411,8 @@ for pool and mounted-file examples.
 | -------------------------------- | ------------------------ | ----------------------------------------------------------------------------------- |
 | `BROWSER_POOL_SIZE`              | `1`                      | Warm Camoufox Firefox instances; raise for concurrent browser solves                |
 | `LOG_LEVEL`                      | `info`                   | Operational logs: `error`, `warn`, `info`, `debug`, or `silent`                     |
-| `METRICS_DASHBOARD_TOKEN`        | —                        | Enable the persistent local `/dashboard`, protected `/dashboard/metrics` JSON, and live event stream with a 32+ character token |
+| `METRICS_DASHBOARD_ENABLED`      | `false`                  | Explicitly enable the local dashboard without a token; bind its port to `127.0.0.1` |
+| `METRICS_DASHBOARD_TOKEN`        | —                        | Protect the dashboard, JSON endpoint, and live stream with a 32+ character token |
 | `METRICS_DB_PATH`                | `/data/metrics/trawl.sqlite` | SQLite path for local metrics history (mount `/data/metrics` persistently) |
 | `BROWSER_ACQUIRE_TIMEOUT_MS`     | `15000`                  | How long `acquire()` polls for a free browser before HTTP 429 is returned           |
 | `BROWSER_RECYCLE_AFTER_CONTEXTS` | `8`                      | Rolling-replace after this many Tier 3/4 contexts; set `0` to disable               |

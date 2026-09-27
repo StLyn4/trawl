@@ -4,7 +4,7 @@ import { dirname } from "node:path"
 import { PoolExhaustedError } from "@trawl/browser"
 import { ScrapeError } from "@trawl/tiers"
 import type { TierResult } from "@trawl/types"
-import { METRICS_DASHBOARD_TOKEN } from "./config"
+import { METRICS_DASHBOARD_ENABLED, METRICS_DASHBOARD_TOKEN } from "./config"
 import type { ScrapeSource } from "./requestLogging"
 
 type Tier = 0 | 1 | 2 | 3 | 4
@@ -222,17 +222,37 @@ export class MetricsStore {
       range <= 60 ? 60_000 : range <= 1440 ? 30 * 60_000 : range <= 10080 ? 4 * 60 * 60_000 : 24 * 60 * 60_000
     const end = Math.floor(now / step) * step
     const size = Math.ceil((range * 60_000) / step)
-    const bins = new Map<number, { requests: number; failures: number }>()
+    const bins = new Map<
+      number,
+      {
+        requests: number
+        failures: number
+        durationMs: number
+        sources: Record<string, number>
+        tiers: Record<string, number>
+      }
+    >()
     for (const row of events) {
       const key = Math.floor(row.at / step) * step
-      const bucket = bins.get(key) ?? { requests: 0, failures: 0 }
+      const bucket = bins.get(key) ?? { requests: 0, failures: 0, durationMs: 0, sources: {}, tiers: {} }
       bucket.requests++
       bucket.failures += Number(!row.success)
+      bucket.durationMs += row.duration_ms
+      bucket.sources[row.source] = (bucket.sources[row.source] ?? 0) + 1
+      if (row.tier !== null) bucket.tiers[row.tier] = (bucket.tiers[row.tier] ?? 0) + 1
       bins.set(key, bucket)
     }
     const timeline = Array.from({ length: size }, (_, index) => {
       const key = end - (size - index - 1) * step
-      return { minute: new Date(key).toISOString(), ...(bins.get(key) ?? { requests: 0, failures: 0 }) }
+      const bucket = bins.get(key) ?? { requests: 0, failures: 0, durationMs: 0, sources: {}, tiers: {} }
+      return {
+        minute: new Date(key).toISOString(),
+        requests: bucket.requests,
+        failures: bucket.failures,
+        averageMs: bucket.requests ? Math.round(bucket.durationMs / bucket.requests) : 0,
+        sources: bucket.sources,
+        tiers: bucket.tiers,
+      }
     })
     const first = db?.query("SELECT MIN(at) AS at FROM events").get() as { at: number | null } | undefined
     return {
@@ -247,6 +267,7 @@ export class MetricsStore {
       byTier,
       byFailure,
       bySeverity,
+      bucketMs: step,
       timeline,
       lastHour: timeline,
       domains: [...domains]
@@ -283,6 +304,6 @@ export class MetricsStore {
 }
 
 export const metrics = new MetricsStore(
-  Boolean(METRICS_DASHBOARD_TOKEN),
+  Boolean(METRICS_DASHBOARD_TOKEN) || METRICS_DASHBOARD_ENABLED,
   process.env.METRICS_DB_PATH?.trim() || "/data/metrics/trawl.sqlite",
 )

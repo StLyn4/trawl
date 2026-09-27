@@ -146,18 +146,21 @@ Set `MITM_ALWAYS_SCRAPE=true` as well when the proxy's direct Tier 0 probe must 
 
 ## Browser Pool
 
-### `METRICS_DASHBOARD_TOKEN`
+### `METRICS_DASHBOARD_ENABLED` and `METRICS_DASHBOARD_TOKEN`
 
 **Default:** _(unset)_
 
-Set a random token of at least 32 characters to enable the local dashboard at
-`/dashboard` and its JSON endpoint at `/dashboard/metrics`. Enter the token in the dashboard;
-it is sent as a Bearer header and held only in the browser tab's memory. No target
-hostnames are exposed by the dashboard API without the token. See the
+For a port bound to `127.0.0.1`, set `METRICS_DASHBOARD_ENABLED=true` to open
+the local dashboard without a token. If the port can be reached by others,
+set a random token of at least 32 characters. The token is sent as a Bearer
+header and held only in the browser tab's memory; it takes precedence over
+the tokenless setting. See the
 [metrics guide](../api-reference/health-stats.md#local-metrics-dashboard).
 
 ```ini
-METRICS_DASHBOARD_TOKEN=<random-secret-at-least-32-characters>
+METRICS_DASHBOARD_ENABLED=true
+# Or use a token for authenticated access:
+# METRICS_DASHBOARD_TOKEN=<random-secret-at-least-32-characters>
 METRICS_DB_PATH=/data/metrics/trawl.sqlite
 ```
 

@@ -43,6 +43,11 @@ describe("local metrics", () => {
     expect(snapshot.failures).toBe(1)
     expect(snapshot.averageMs).toBe(25)
     expect(snapshot.lastHour.at(-1)).toMatchObject({ requests: 2, failures: 1 })
+    expect(snapshot.timeline.at(-1)).toMatchObject({
+      averageMs: 25,
+      sources: { mcp: 1, native: 1 },
+      tiers: { 1: 1, 3: 1 },
+    })
     expect(snapshot.byTier[1]).toEqual({ attempts: 2, successes: 0 })
     expect(snapshot.byTier[2]).toEqual({ attempts: 0, successes: 0 })
     expect(snapshot.byTier[3]).toEqual({ attempts: 1, successes: 1 })

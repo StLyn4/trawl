@@ -1,4 +1,4 @@
-export const dashboardPage = `<!doctype html>
+export const dashboardPage = (requiresToken: boolean) => `<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
@@ -15,22 +15,22 @@ button,input{font:inherit}button{cursor:pointer;border:1px solid #38506a;backgro
 .toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:17px;flex-wrap:wrap}.toolbar-group{display:flex;align-items:center;gap:7px}.toolbar button{font-size:12px}.range[aria-pressed="true"]{background:#315879;border-color:#5696ca;color:white}.toolbar-label{font-size:12px;color:#9aaebe;margin-right:6px}
 .kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:11px;margin-bottom:15px}.kpi{padding:17px 18px;border:1px solid #2d4054;border-radius:10px;background:#172431}.kpi strong{display:block;font-size:31px;letter-spacing:-.045em;line-height:1.1;font-variant-numeric:tabular-nums}.kpi span{display:block;color:#a8b9c8;font-size:12px;margin-top:7px}.kpi:nth-child(2) strong{color:#5ddab5}.kpi:nth-child(3) strong{color:#ffb583}
 .layout{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(290px,1fr);gap:15px}.panel{border:1px solid #2d4054;background:#172431;border-radius:10px;padding:20px;min-width:0}.panel p{font-size:12px;margin-bottom:12px}.wide{grid-column:1/-1}.panel-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap}.legend{display:flex;align-items:center;gap:13px;font-size:11px;color:#aebdca}.key{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:5px}.good{background:#4dcba6}.bad{background:#f5a363}
-#trend{width:100%;height:auto;min-height:190px;display:block}.meter-list{display:grid;gap:13px;margin-top:17px}.meter-row{display:grid;grid-template-columns:76px minmax(0,1fr) 78px;align-items:center;gap:11px;font-size:12px}.meter-row .name{color:#cedae5}.meter-row .value{text-align:right;color:#9eb0bf;font-variant-numeric:tabular-nums}.track{height:9px;border-radius:999px;background:#263b4c;overflow:hidden}.activity{height:100%;background:#4c6171;border-radius:999px;overflow:hidden}.win-fill,.category-fill,.source-fill{height:100%;border-radius:999px;background:#4dcba6}.category-fill{background:#f3a15f}.source-fill{background:#70acfa}
+#trend{width:100%;height:auto;min-height:190px;display:block}.trend-bar:focus-visible{outline:none}.trend-bar:focus-visible rect:first-of-type{stroke:#dbe8f3;stroke-width:2}.trend-tooltip{position:fixed;z-index:20;pointer-events:none;max-width:260px;padding:12px 14px;border:1px solid #4d6880;border-radius:8px;background:#0e1925;box-shadow:0 12px 32px #0008;color:#e8eef5;font-size:12px;line-height:1.5}.trend-tooltip strong{display:block;margin-bottom:5px;font-size:13px}.trend-tooltip .detail{display:flex;justify-content:space-between;gap:18px}.trend-tooltip .detail span:first-child{color:#9eb0bf}.meter-list{display:grid;gap:13px;margin-top:17px}.meter-row{display:grid;grid-template-columns:76px minmax(0,1fr) 78px;align-items:center;gap:11px;font-size:12px}.meter-row .name{color:#cedae5}.meter-row .value{text-align:right;color:#9eb0bf;font-variant-numeric:tabular-nums}.track{height:9px;border-radius:999px;background:#263b4c;overflow:hidden}.activity{height:100%;background:#4c6171;border-radius:999px;overflow:hidden}.win-fill,.category-fill,.source-fill{height:100%;border-radius:999px;background:#4dcba6}.category-fill{background:#f3a15f}.source-fill{background:#70acfa}
 .table-scroll{overflow:auto;max-height:410px}table{width:100%;border-collapse:collapse;font-size:12px;text-align:left}th{position:sticky;top:0;background:#172431;color:#8fa5b8;font-weight:600;white-space:nowrap}th,td{padding:10px 9px;border-bottom:1px solid #2a3b4c}td{color:#cbd7e1}td:first-child,th:first-child{padding-left:0}td:last-child,th:last-child{padding-right:0}td.number{font-variant-numeric:tabular-nums;text-align:right}th.number{text-align:right}.failure-search{width:min(310px,100%);font-size:12px}.footnote{font-size:11px;color:#7f95a8;margin:18px 1px}
 [hidden]{display:none!important}.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 @media(max-width:850px){body{padding:20px 15px 55px}.layout{grid-template-columns:1fr}.wide{grid-column:1}.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}header{align-items:center}.status{padding:0}}
 @media(max-width:450px){.kpis{gap:8px}.kpi{padding:14px}.kpi strong{font-size:25px}.mark{width:36px;height:36px}h1{font-size:23px}.panel{padding:15px}.meter-row{grid-template-columns:66px minmax(0,1fr) 68px;gap:7px}}
 </style>
 </head>
-<body>
+<body data-auth-required="${requiresToken}">
 <header><div class="brand"><div class="mark" aria-hidden="true">T</div><div><div class="eyebrow">Local observability</div><h1>TRAWL metrics</h1><small>Persistent scrape activity</small></div></div><div id="status" class="status"><span class="status-dot"></span><span id="status-text">Locked</span></div></header>
-<form id="login"><input id="token" type="password" autocomplete="off" placeholder="Dashboard token" aria-label="Dashboard token" required><button class="primary">Open dashboard</button></form>
+<form id="login"${requiresToken ? "" : " hidden"}><input id="token" type="password" autocomplete="off" placeholder="Dashboard token" aria-label="Dashboard token" required><button class="primary">Open dashboard</button></form>
 <p id="error" role="alert"></p>
 <main id="content" hidden>
 <div class="toolbar"><div class="toolbar-group"><span class="toolbar-label">Activity</span><button class="range" data-minutes="15" aria-pressed="false">15 min</button><button class="range" data-minutes="60" aria-pressed="true">60 min</button><button class="range" data-minutes="1440" aria-pressed="false">24 h</button><button class="range" data-minutes="10080" aria-pressed="false">7 d</button><button class="range" data-minutes="43200" aria-pressed="false">30 d</button></div><div class="toolbar-group"><span id="updated" class="toolbar-label">Waiting for data</span><button id="refresh" type="button">Refresh</button><button id="pause" type="button" aria-pressed="false">Pause live</button><button id="export" type="button">Export JSON</button></div></div>
 <div class="kpis"><div class="kpi"><strong id="requests">0</strong><span>Requests</span></div><div class="kpi"><strong id="success-rate">0%</strong><span>Success rate</span></div><div class="kpi"><strong id="failures">0</strong><span>Failures</span></div><div class="kpi"><strong id="average">0 ms</strong><span>Average duration</span></div></div>
 <div class="layout">
-<section class="panel wide"><div class="panel-head"><div><h2>Request activity</h2><p>Completed requests in the selected period</p></div><div class="legend"><span><i class="key good"></i>Success</span><span><i class="key bad"></i>Failure</span></div></div><svg id="trend" role="img" aria-label="Successful and failed requests by minute" viewBox="0 0 720 220"></svg><p id="trend-summary" class="sr-only"></p></section>
+<section class="panel wide"><div class="panel-head"><div><h2>Request activity</h2><p>Completed requests in the selected period · hover or focus a bar for details</p></div><div class="legend"><span><i class="key good"></i>Success</span><span><i class="key bad"></i>Failure</span></div></div><svg id="trend" role="img" aria-label="Successful and failed requests over time" viewBox="0 0 720 220"></svg><div id="trend-tooltip" class="trend-tooltip" role="tooltip" hidden></div><p id="trend-summary" class="sr-only"></p></section>
 <section class="panel"><h2>Tier outcomes</h2><p>Attempts and successful final responses</p><div id="tiers" class="meter-list"></div></section>
 <section class="panel"><h2>Failure causes</h2><p>Best-effort classification in the selected period</p><div id="categories" class="meter-list"></div></section>
 <section class="panel"><h2>Domains with failures</h2><p>Highest failure counts in the selected period</p><div class="table-scroll"><table><thead><tr><th>Domain</th><th class="number">Requests</th><th class="number">Failed</th><th class="number">Rate</th></tr></thead><tbody id="domains"></tbody></table></div></section>
@@ -41,6 +41,7 @@ button,input{font:inherit}button{cursor:pointer;border:1px solid #38506a;backgro
 </main>
 <script>
 let token = '';
+const authRequired = document.body.dataset.authRequired === 'true';
 let timer;
 let streamAbort;
 let reconnectTimer;
@@ -86,9 +87,45 @@ function svgNode(tag, attrs) {
   return node;
 }
 
+function shortTime(date, range) {
+  if (range <= 60) return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  if (range <= 10080) return date.toLocaleString([], { day: 'numeric', month: 'short', hour: '2-digit' });
+  return date.toLocaleDateString([], { day: 'numeric', month: 'short' });
+}
+
+function detailLine(root, name, value) {
+  const row = element('div', 'detail');
+  row.append(element('span', '', name), element('span', '', value));
+  root.append(row);
+}
+
+function showTrendTooltip(point, data, clientX, clientY) {
+  const tooltip = byId('trend-tooltip');
+  tooltip.replaceChildren();
+  const start = new Date(point.minute);
+  const end = new Date(start.getTime() + data.bucketMs);
+  tooltip.append(element('strong', '', start.toLocaleString() + ' – ' + end.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })));
+  detailLine(tooltip, 'Requests', number(point.requests));
+  detailLine(tooltip, 'Successful', number(point.requests - point.failures));
+  detailLine(tooltip, 'Failed', number(point.failures));
+  if (point.requests) {
+    detailLine(tooltip, 'Success rate', Math.round((point.requests - point.failures) / point.requests * 100) + '%');
+    detailLine(tooltip, 'Average duration', number(point.averageMs) + ' ms');
+    const sources = Object.entries(point.sources).map(([name, count]) => name + ' ' + count).join(', ');
+    const tiers = Object.entries(point.tiers).map(([tier, count]) => 'T' + tier + ' ' + count).join(', ');
+    if (sources) detailLine(tooltip, 'Sources', sources);
+    if (tiers) detailLine(tooltip, 'Final tiers', tiers);
+  }
+  tooltip.hidden = false;
+  const rect = tooltip.getBoundingClientRect();
+  tooltip.style.left = Math.max(8, Math.min(clientX + 14, window.innerWidth - rect.width - 8)) + 'px';
+  tooltip.style.top = Math.max(8, Math.min(clientY - rect.height - 12, window.innerHeight - rect.height - 8)) + 'px';
+}
+
 function drawTrend(data) {
   const points = data.timeline;
   const svg = byId('trend');
+  byId('trend-tooltip').hidden = true;
   svg.replaceChildren();
   const max = Math.max(1, ...points.map(point => point.requests));
   const compact = window.matchMedia('(max-width: 600px)').matches;
@@ -100,7 +137,8 @@ function drawTrend(data) {
   const plotWidth = width - plotLeft - 26;
   const step = plotWidth / points.length;
   const barWidth = Math.max(2, step - (points.length >= 50 ? 3 : 7));
-  const tickInterval = compact ? Math.ceil(points.length / 4) : Math.ceil(points.length / 7);
+  const labels = compact ? 3 : 5;
+  const tickIndices = new Set(Array.from({ length: labels }, (_, index) => Math.round(index * (points.length - 1) / (labels - 1))));
   const lines = Math.min(3, max);
   for (let i = 0; i <= lines; i++) {
     const y = plotBottom - i * plotHeight / lines;
@@ -114,22 +152,28 @@ function drawTrend(data) {
     const success = point.requests - point.failures;
     const successHeight = success / max * plotHeight;
     const failureHeight = point.failures / max * plotHeight;
-    const group = svgNode('g', {});
-    const title = svgNode('title', {});
-    title.textContent = new Date(point.minute).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) + ': ' + success + ' succeeded, ' + point.failures + ' failed';
-    group.append(title);
+    const group = svgNode('g', { class: 'trend-bar', 'aria-label': new Date(point.minute).toLocaleString() + ', ' + point.requests + ' requests, ' + point.failures + ' failed' });
+    if (point.requests) group.setAttribute('tabindex', '0');
+    group.append(svgNode('rect', { x: plotLeft + index * step, y: plotBottom - plotHeight, width: step, height: plotHeight, fill: 'transparent' }));
     if (successHeight) group.append(svgNode('rect', { x, y: plotBottom - successHeight, width: barWidth, height: successHeight, rx: 2, fill: '#4dcba6' }));
     if (failureHeight) group.append(svgNode('rect', { x, y: plotBottom - successHeight - failureHeight, width: barWidth, height: failureHeight, rx: 2, fill: '#f5a363' }));
+    group.addEventListener('pointermove', event => showTrendTooltip(point, data, event.clientX, event.clientY));
+    group.addEventListener('pointerleave', () => { byId('trend-tooltip').hidden = true; });
+    group.addEventListener('focus', () => {
+      const rect = group.getBoundingClientRect();
+      showTrendTooltip(point, data, rect.x + rect.width / 2, rect.y);
+    });
+    group.addEventListener('blur', () => { byId('trend-tooltip').hidden = true; });
     svg.append(group);
-    if (index % tickInterval === 0 || index === points.length - 1) {
-      const tick = svgNode('text', { x: x + barWidth / 2, y: 209, fill: '#8fa5b8', 'font-size': 11, 'text-anchor': 'middle' });
-      tick.textContent = new Date(point.minute).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    if (tickIndices.has(index)) {
+      const tick = svgNode('text', { x: x + barWidth / 2, y: 209, fill: '#8fa5b8', 'font-size': 11, 'text-anchor': index === 0 ? 'start' : index === points.length - 1 ? 'end' : 'middle' });
+      tick.textContent = shortTime(new Date(point.minute), minutes);
       svg.append(tick);
     }
   });
   const total = points.reduce((sum, point) => sum + point.requests, 0);
   const failed = points.reduce((sum, point) => sum + point.failures, 0);
-  byId('trend-summary').textContent = total + ' requests in the last ' + (minutes < 60 ? minutes + ' minutes' : minutes / 60 + ' hours') + '; ' + failed + ' failed.';
+  byId('trend-summary').textContent = total + ' requests in the selected period; ' + failed + ' failed.';
 }
 
 function meter(name, value, max, annotation, kind) {
@@ -209,11 +253,11 @@ function setStatus(state, label) {
 }
 
 async function refresh() {
-  if (loading || !token) return;
+  if (loading || (authRequired && !token)) return;
   loading = true;
   try {
     const response = await fetch('/dashboard/metrics?minutes=' + minutes, {
-      headers: { Authorization: 'Bearer ' + token }, cache: 'no-store'
+      headers: token ? { Authorization: 'Bearer ' + token } : {}, cache: 'no-store'
     });
     if (!response.ok) throw Error(response.status === 401 ? 'Invalid token' : 'Metrics unavailable');
     render(await response.json());
@@ -238,12 +282,12 @@ async function refresh() {
 async function connectEvents() {
   streamAbort?.abort();
   clearTimeout(reconnectTimer);
-  if (!token) return;
+  if (authRequired && !token) return;
   const controller = new AbortController();
   streamAbort = controller;
   try {
     const response = await fetch('/dashboard/events', {
-      headers: { Authorization: 'Bearer ' + token }, cache: 'no-store', signal: controller.signal
+      headers: token ? { Authorization: 'Bearer ' + token } : {}, cache: 'no-store', signal: controller.signal
     });
     if (!response.ok || !response.body) throw Error('Live connection unavailable');
     const reader = response.body.getReader();
@@ -260,17 +304,22 @@ async function connectEvents() {
   } catch (error) {
     if (error.name !== 'AbortError') setStatus('', 'Reconnecting');
   }
-  if (!controller.signal.aborted && token) reconnectTimer = setTimeout(connectEvents, 2000);
+  if (!controller.signal.aborted && (!authRequired || token)) reconnectTimer = setTimeout(connectEvents, 2000);
+}
+
+function startUpdates() {
+  refresh();
+  connectEvents();
+  if (!timer) timer = setInterval(() => { if (!paused) refresh(); }, 30000);
 }
 
 byId('login').addEventListener('submit', event => {
   event.preventDefault();
   token = byId('token').value;
   byId('token').value = '';
-  refresh();
-  connectEvents();
-  if (!timer) timer = setInterval(() => { if (!paused) refresh(); }, 30000);
+  startUpdates();
 });
+if (!authRequired) startUpdates();
 for (const button of document.querySelectorAll('.range')) button.addEventListener('click', () => {
   minutes = Number(button.dataset.minutes);
   for (const option of document.querySelectorAll('.range')) option.setAttribute('aria-pressed', String(option === button));

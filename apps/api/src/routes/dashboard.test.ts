@@ -11,6 +11,29 @@ describe("local metrics dashboard", () => {
     expect((await app.handle(new Request("http://localhost/dashboard/metrics"))).status).toBe(404)
   })
 
+  test("supports explicit tokenless access for a loopback deployment", async () => {
+    const store = new MetricsStore()
+    store.record({ source: "native", url: "https://local.example/path", statusCode: 200, durationMs: 10 })
+    const app = dashboardRoute("", store, true)
+    const shell = await app.handle(new Request("http://localhost/dashboard"))
+    const html = await shell.text()
+    expect(shell.status).toBe(200)
+    expect(html).toContain('data-auth-required="false"')
+    expect(html).toContain('<form id="login" hidden>')
+    const script = html.match(/<script>([\s\S]*?)<\/script>/)?.[1]
+    if (!script) throw new Error("Dashboard script is missing")
+    expect(() => new Function(script)).not.toThrow()
+    const metrics = await app.handle(new Request("http://localhost/dashboard/metrics"))
+    expect(metrics.status).toBe(200)
+    expect((await metrics.json()).requests).toBe(1)
+    const controller = new AbortController()
+    const stream = await app.handle(new Request("http://localhost/dashboard/events", { signal: controller.signal }))
+    expect(stream.status).toBe(200)
+    controller.abort()
+    await stream.body?.cancel()
+    store.close()
+  })
+
   test("serves a dashboard shell without data and requires bearer auth for JSON", async () => {
     const store = new MetricsStore()
     store.record({ source: "mcp", url: "https://sensitive.example/path?secret=1", statusCode: 502, durationMs: 10 })

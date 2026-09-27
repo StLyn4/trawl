@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Add persistent, bounded SQLite scrape metrics and an optional token-protected local dashboard with live activity, history charts, request and failure details, and local JSON export (#178).
+- Add persistent, bounded SQLite scrape metrics and an optional token-protected local dashboard with live activity, readable history charts and hover details, optional loopback tokenless access, request and failure details, and local JSON export (#178).
 - Capture a selected page element in MCP and native browser screenshots (#175).
 - Allow MCP extraction to render JavaScript pages and wait for visible content before selecting fields (#173).
 - Add bounded full-page screenshots and visible-selector waits to browser screenshot requests and the MCP `screenshot` tool.
