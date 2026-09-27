@@ -145,6 +145,16 @@ configured token takes precedence over the tokenless setting. Open
 `http://localhost:8191/dashboard` to view the page. Keep the dashboard on a
 trusted network and use HTTPS when connecting remotely.
 
+For documentation screenshots, open `/dashboard?demo=1`. This view is visibly
+marked **Demo data** and generates illustrative activity with reserved `.example`
+domains in an isolated in-memory store. It does not add requests to the local
+SQLite history. The demo JSON endpoint keeps the dashboard's normal token
+requirement. Return to `/dashboard` to see actual requests.
+
+![TRAWL dashboard with clearly labeled sample traffic](/screenshots/dashboard-demo-overview.png)
+
+[View the full dashboard sample](/screenshots/dashboard-demo-full.png).
+
 The dashboard counts completed scraper operations from `/scrape`, `/v1`, MCP,
 and the MITM proxy. Direct proxy HTTP responses count as Tier 0; responses that
 escalate count once under the scraper result. Tier attempts exclude skipped
