@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Add bounded, in-memory scrape metrics and an optional token-protected local dashboard with tier, source, failure, and hostname summaries (#178).
 - Capture a selected page element in MCP and native browser screenshots (#175).
 - Allow MCP extraction to render JavaScript pages and wait for visible content before selecting fields (#173).
 - Add bounded full-page screenshots and visible-selector waits to browser screenshot requests and the MCP `screenshot` tool.

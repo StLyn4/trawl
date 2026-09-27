@@ -9,6 +9,7 @@ import {
   scrape,
 } from "@trawl/tiers"
 import { safeUrl } from "../logger"
+import { metrics } from "../metrics"
 import { runLoggedScrape } from "../requestLogging"
 import { MitmCa } from "./ca"
 import { ChallengeCache, type ChallengeMode } from "./challengeCache"
@@ -339,6 +340,8 @@ async function proxyRequest(
   const sanitized = proxySanitizeHeaders(clientHeaders) ?? {}
   const useHttps = url.startsWith("https://")
   let tier0: ForwardResult
+  const tier0Started = Date.now()
+  metrics.recordTierZeroAttempt()
   try {
     if (useHttps) {
       const parsed = new URL(url)
@@ -372,6 +375,7 @@ async function proxyRequest(
   if (tier0.mode === "stream") {
     if (opts.debug) console.log(`[proxy] Tier 0 stream for ${safeUrl(url)} -> ${tier0.status}`)
     challengeCache.set(domain, "direct")
+    metrics.record({ source: "proxy", url, durationMs: Date.now() - tier0Started, tier: 0, statusCode: tier0.status })
     writeResponseFromStream(
       stream,
       tier0.status,
@@ -391,6 +395,7 @@ async function proxyRequest(
   }
 
   challengeCache.set(domain, "direct")
+  metrics.record({ source: "proxy", url, durationMs: Date.now() - tier0Started, tier: 0, statusCode: tier0.status })
   writeResponseFromBuffer(stream, tier0.status, tier0.headers, tier0.body, tier0.contentType)
 }
 

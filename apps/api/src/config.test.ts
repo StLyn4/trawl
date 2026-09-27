@@ -167,4 +167,15 @@ describe("environment configuration", () => {
       'Invalid SCRAPE_PROXY_SELECTION "rotate"; expected "failover", "roundrobin", or "random"',
     )
   })
+
+  test("requires a sufficiently long dashboard token", () => {
+    const result = Bun.spawnSync({
+      cmd: [process.execPath, "-e", 'await import("./config.ts")'],
+      cwd: import.meta.dir,
+      env: { ...process.env, METRICS_DASHBOARD_TOKEN: "too-short" },
+    })
+
+    expect(result.exitCode).not.toBe(0)
+    expect(result.stderr.toString()).toContain("METRICS_DASHBOARD_TOKEN must be at least 32 characters")
+  })
 })
