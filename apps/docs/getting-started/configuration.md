@@ -158,6 +158,7 @@ hostnames are exposed by the dashboard API without the token. See the
 
 ```ini
 METRICS_DASHBOARD_TOKEN=<random-secret-at-least-32-characters>
+METRICS_DB_PATH=/data/metrics/trawl.sqlite
 ```
 
 ### `LOG_LEVEL`

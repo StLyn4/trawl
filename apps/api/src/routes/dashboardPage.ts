@@ -23,24 +23,27 @@ button,input{font:inherit}button{cursor:pointer;border:1px solid #38506a;backgro
 </style>
 </head>
 <body>
-<header><div class="brand"><div class="mark" aria-hidden="true">T</div><div><div class="eyebrow">Local observability</div><h1>TRAWL metrics</h1><small>Scrape activity on this instance</small></div></div><div id="status" class="status"><span class="status-dot"></span><span id="status-text">Locked</span></div></header>
+<header><div class="brand"><div class="mark" aria-hidden="true">T</div><div><div class="eyebrow">Local observability</div><h1>TRAWL metrics</h1><small>Persistent scrape activity</small></div></div><div id="status" class="status"><span class="status-dot"></span><span id="status-text">Locked</span></div></header>
 <form id="login"><input id="token" type="password" autocomplete="off" placeholder="Dashboard token" aria-label="Dashboard token" required><button class="primary">Open dashboard</button></form>
 <p id="error" role="alert"></p>
 <main id="content" hidden>
-<div class="toolbar"><div class="toolbar-group"><span class="toolbar-label">Activity</span><button class="range" data-minutes="15" aria-pressed="false">15 min</button><button class="range" data-minutes="60" aria-pressed="true">60 min</button></div><div class="toolbar-group"><span id="updated" class="toolbar-label">Waiting for data</span><button id="refresh" type="button">Refresh</button><button id="pause" type="button" aria-pressed="false">Pause live</button><button id="export" type="button">Export JSON</button></div></div>
+<div class="toolbar"><div class="toolbar-group"><span class="toolbar-label">Activity</span><button class="range" data-minutes="15" aria-pressed="false">15 min</button><button class="range" data-minutes="60" aria-pressed="true">60 min</button><button class="range" data-minutes="1440" aria-pressed="false">24 h</button><button class="range" data-minutes="10080" aria-pressed="false">7 d</button><button class="range" data-minutes="43200" aria-pressed="false">30 d</button></div><div class="toolbar-group"><span id="updated" class="toolbar-label">Waiting for data</span><button id="refresh" type="button">Refresh</button><button id="pause" type="button" aria-pressed="false">Pause live</button><button id="export" type="button">Export JSON</button></div></div>
 <div class="kpis"><div class="kpi"><strong id="requests">0</strong><span>Requests</span></div><div class="kpi"><strong id="success-rate">0%</strong><span>Success rate</span></div><div class="kpi"><strong id="failures">0</strong><span>Failures</span></div><div class="kpi"><strong id="average">0 ms</strong><span>Average duration</span></div></div>
 <div class="layout">
-<section class="panel wide"><div class="panel-head"><div><h2>Request activity</h2><p>Completed requests per minute</p></div><div class="legend"><span><i class="key good"></i>Success</span><span><i class="key bad"></i>Failure</span></div></div><svg id="trend" role="img" aria-label="Successful and failed requests by minute" viewBox="0 0 720 220"></svg><p id="trend-summary" class="sr-only"></p></section>
+<section class="panel wide"><div class="panel-head"><div><h2>Request activity</h2><p>Completed requests in the selected period</p></div><div class="legend"><span><i class="key good"></i>Success</span><span><i class="key bad"></i>Failure</span></div></div><svg id="trend" role="img" aria-label="Successful and failed requests by minute" viewBox="0 0 720 220"></svg><p id="trend-summary" class="sr-only"></p></section>
 <section class="panel"><h2>Tier outcomes</h2><p>Attempts and successful final responses</p><div id="tiers" class="meter-list"></div></section>
-<section class="panel"><h2>Failure causes</h2><p>Best-effort classification since process start</p><div id="categories" class="meter-list"></div></section>
-<section class="panel"><h2>Domains with failures</h2><p>Highest failure counts among retained hostnames</p><div class="table-scroll"><table><thead><tr><th>Domain</th><th class="number">Requests</th><th class="number">Failed</th><th class="number">Rate</th></tr></thead><tbody id="domains"></tbody></table></div></section>
+<section class="panel"><h2>Failure causes</h2><p>Best-effort classification in the selected period</p><div id="categories" class="meter-list"></div></section>
+<section class="panel"><h2>Domains with failures</h2><p>Highest failure counts in the selected period</p><div class="table-scroll"><table><thead><tr><th>Domain</th><th class="number">Requests</th><th class="number">Failed</th><th class="number">Rate</th></tr></thead><tbody id="domains"></tbody></table></div></section>
 <section class="panel"><h2>Request sources</h2><p>Completed operations by entry point</p><div id="sources" class="meter-list"></div></section>
-<section class="panel wide"><div class="panel-head"><div><h2>Recent failures</h2><p>Last 50 failures, newest first</p></div><input id="failure-search" class="failure-search" type="search" placeholder="Filter domain, cause or source" aria-label="Filter recent failures"></div><div class="table-scroll"><table><thead><tr><th>Time</th><th>Domain</th><th>Source</th><th>Tier</th><th>Status</th><th>HTTP</th><th>Cause</th><th>Severity</th></tr></thead><tbody id="recent"></tbody></table></div></section>
-</div><p class="footnote">Hostnames only · no remote telemetry · data resets when this process restarts</p>
+<section class="panel wide"><div class="panel-head"><div><h2>Recent failures</h2><p>Last 50 failures in the selected period, newest first</p></div><input id="failure-search" class="failure-search" type="search" placeholder="Filter domain, cause or source" aria-label="Filter recent failures"></div><div class="table-scroll"><table><thead><tr><th>Time</th><th>Domain</th><th>Source</th><th>Tier</th><th>Status</th><th>HTTP</th><th>Cause</th><th>Severity</th></tr></thead><tbody id="recent"></tbody></table></div></section>
+<section class="panel wide"><div class="panel-head"><div><h2>Recent activity</h2><p>Last 100 completed requests in the selected period</p></div></div><div class="table-scroll"><table><thead><tr><th>Time</th><th>Domain</th><th>Source</th><th>Tier</th><th>HTTP</th><th>Duration</th><th>Outcome</th></tr></thead><tbody id="events"></tbody></table></div></section>
+</div><p class="footnote" id="history-note">Hostnames only · local history · no remote telemetry</p>
 </main>
 <script>
 let token = '';
 let timer;
+let streamAbort;
+let reconnectTimer;
 let paused = false;
 let loading = false;
 let minutes = window.matchMedia('(max-width: 600px)').matches ? 15 : 60;
@@ -62,7 +65,7 @@ function drawRows(id, items, emptyMessage) {
   if (!items.length) {
     const row = element('tr');
     const cell = element('td', 'muted', emptyMessage);
-    cell.colSpan = id === 'recent' ? 8 : 4;
+    cell.colSpan = id === 'recent' ? 8 : id === 'events' ? 7 : 4;
     row.append(cell);
     body.append(row);
     return;
@@ -84,7 +87,7 @@ function svgNode(tag, attrs) {
 }
 
 function drawTrend(data) {
-  const points = data.lastHour.slice(-minutes);
+  const points = data.timeline;
   const svg = byId('trend');
   svg.replaceChildren();
   const max = Math.max(1, ...points.map(point => point.requests));
@@ -96,8 +99,8 @@ function drawTrend(data) {
   const plotHeight = 150;
   const plotWidth = width - plotLeft - 26;
   const step = plotWidth / points.length;
-  const barWidth = Math.max(2, step - (minutes === 60 ? 3 : 7));
-  const tickInterval = compact ? (minutes === 60 ? 15 : 5) : (minutes === 60 ? 10 : 3);
+  const barWidth = Math.max(2, step - (points.length >= 50 ? 3 : 7));
+  const tickInterval = compact ? Math.ceil(points.length / 4) : Math.ceil(points.length / 7);
   const lines = Math.min(3, max);
   for (let i = 0; i <= lines; i++) {
     const y = plotBottom - i * plotHeight / lines;
@@ -113,20 +116,20 @@ function drawTrend(data) {
     const failureHeight = point.failures / max * plotHeight;
     const group = svgNode('g', {});
     const title = svgNode('title', {});
-    title.textContent = new Date(point.minute).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ': ' + success + ' succeeded, ' + point.failures + ' failed';
+    title.textContent = new Date(point.minute).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) + ': ' + success + ' succeeded, ' + point.failures + ' failed';
     group.append(title);
     if (successHeight) group.append(svgNode('rect', { x, y: plotBottom - successHeight, width: barWidth, height: successHeight, rx: 2, fill: '#4dcba6' }));
     if (failureHeight) group.append(svgNode('rect', { x, y: plotBottom - successHeight - failureHeight, width: barWidth, height: failureHeight, rx: 2, fill: '#f5a363' }));
     svg.append(group);
     if (index % tickInterval === 0 || index === points.length - 1) {
       const tick = svgNode('text', { x: x + barWidth / 2, y: 209, fill: '#8fa5b8', 'font-size': 11, 'text-anchor': 'middle' });
-      tick.textContent = new Date(point.minute).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      tick.textContent = new Date(point.minute).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
       svg.append(tick);
     }
   });
   const total = points.reduce((sum, point) => sum + point.requests, 0);
   const failed = points.reduce((sum, point) => sum + point.failures, 0);
-  byId('trend-summary').textContent = total + ' requests in the last ' + minutes + ' minutes; ' + failed + ' failed.';
+  byId('trend-summary').textContent = total + ' requests in the last ' + (minutes < 60 ? minutes + ' minutes' : minutes / 60 + ' hours') + '; ' + failed + ' failed.';
 }
 
 function meter(name, value, max, annotation, kind) {
@@ -175,7 +178,7 @@ function drawFailures() {
     !query || [item.domain, item.source, item.category, item.severity].some(value => value.includes(query))
   );
   drawRows('recent', entries.map(item => [
-    new Date(item.at).toLocaleTimeString(), item.domain, item.source,
+    new Date(item.at).toLocaleString(), item.domain, item.source,
     item.tier ?? '—', item.tierStatus ?? '—', item.statusCode ?? '—', item.category, item.severity
   ]), query ? 'No matching failures' : 'No failures recorded');
 }
@@ -192,6 +195,11 @@ function render(data) {
     item.domain, number(item.requests), number(item.failures), Math.round(item.failures / item.requests * 100) + '%'
   ]), 'No failing domains');
   drawFailures();
+  drawRows('events', data.recentEvents.map(item => [
+    new Date(item.at).toLocaleString(), item.domain, item.source, item.tier ?? '—',
+    item.statusCode ?? '—', number(item.durationMs) + ' ms', item.success ? 'Success' : (item.category ?? 'Failure')
+  ]), 'No requests recorded in this period');
+  byId('history-note').textContent = 'Hostnames only · local history' + (data.startedAt ? ' since ' + new Date(data.startedAt).toLocaleString() : ' starts with the first request') + ' · ' + number(data.retainedEvents) + ' retained events · no remote telemetry';
   byId('updated').textContent = 'Updated ' + new Date().toLocaleTimeString();
 }
 
@@ -204,7 +212,7 @@ async function refresh() {
   if (loading || !token) return;
   loading = true;
   try {
-    const response = await fetch('/dashboard/metrics', {
+    const response = await fetch('/dashboard/metrics?minutes=' + minutes, {
       headers: { Authorization: 'Bearer ' + token }, cache: 'no-store'
     });
     if (!response.ok) throw Error(response.status === 401 ? 'Invalid token' : 'Metrics unavailable');
@@ -212,12 +220,13 @@ async function refresh() {
     byId('error').textContent = '';
     byId('content').hidden = false;
     byId('login').hidden = true;
-    setStatus(paused ? 'paused' : 'live', paused ? 'Paused' : 'Live · 10 s');
+    setStatus(paused ? 'paused' : 'live', paused ? 'Paused' : 'Live');
   } catch (error) {
     byId('error').textContent = error.message;
     setStatus('', 'Connection issue');
     if (error.message === 'Invalid token') {
       token = '';
+      streamAbort?.abort();
       byId('content').hidden = true;
       byId('login').hidden = false;
     }
@@ -226,24 +235,53 @@ async function refresh() {
   }
 }
 
+async function connectEvents() {
+  streamAbort?.abort();
+  clearTimeout(reconnectTimer);
+  if (!token) return;
+  const controller = new AbortController();
+  streamAbort = controller;
+  try {
+    const response = await fetch('/dashboard/events', {
+      headers: { Authorization: 'Bearer ' + token }, cache: 'no-store', signal: controller.signal
+    });
+    if (!response.ok || !response.body) throw Error('Live connection unavailable');
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const frames = buffer.split('\\n\\n');
+      buffer = frames.pop() || '';
+      if (frames.some(frame => frame.startsWith('event: update')) && !paused) refresh();
+    }
+  } catch (error) {
+    if (error.name !== 'AbortError') setStatus('', 'Reconnecting');
+  }
+  if (!controller.signal.aborted && token) reconnectTimer = setTimeout(connectEvents, 2000);
+}
+
 byId('login').addEventListener('submit', event => {
   event.preventDefault();
   token = byId('token').value;
   byId('token').value = '';
   refresh();
-  if (!timer) timer = setInterval(() => { if (!paused) refresh(); }, 10000);
+  connectEvents();
+  if (!timer) timer = setInterval(() => { if (!paused) refresh(); }, 30000);
 });
 for (const button of document.querySelectorAll('.range')) button.addEventListener('click', () => {
   minutes = Number(button.dataset.minutes);
   for (const option of document.querySelectorAll('.range')) option.setAttribute('aria-pressed', String(option === button));
-  if (currentData) drawTrend(currentData);
+  refresh();
 });
 byId('refresh').addEventListener('click', refresh);
 byId('pause').addEventListener('click', event => {
   paused = !paused;
   event.currentTarget.textContent = paused ? 'Resume live' : 'Pause live';
   event.currentTarget.setAttribute('aria-pressed', String(paused));
-  setStatus(paused ? 'paused' : 'live', paused ? 'Paused' : 'Live · 10 s');
+  setStatus(paused ? 'paused' : 'live', paused ? 'Paused' : 'Live');
   if (!paused) refresh();
 });
 byId('failure-search').addEventListener('input', drawFailures);

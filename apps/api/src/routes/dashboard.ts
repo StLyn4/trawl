@@ -1,7 +1,7 @@
 import { timingSafeEqual } from "node:crypto"
 import { Elysia } from "elysia"
 import { METRICS_DASHBOARD_TOKEN } from "../config"
-import { type MetricsStore, metrics } from "../metrics"
+import { type MetricsStore, metricRanges, metrics } from "../metrics"
 import { dashboardPage } from "./dashboardPage"
 
 function validToken(header: string | null, secret: string): boolean {
@@ -28,6 +28,47 @@ export function dashboardRoute(secret = METRICS_DASHBOARD_TOKEN, store: MetricsS
         set.status = 401
         return { error: "Unauthorized" }
       }
-      return store.snapshot()
+      const value = Number(new URL(request.url).searchParams.get("minutes") || 60)
+      return store.snapshot(
+        metricRanges.includes(value as (typeof metricRanges)[number]) ? (value as (typeof metricRanges)[number]) : 60,
+      )
+    })
+    .get("/dashboard/events", ({ request, set }) => {
+      if (!validToken(request.headers.get("authorization"), secret)) {
+        set.status = 401
+        return { error: "Unauthorized" }
+      }
+      let cleanup = () => {}
+      const stream = new ReadableStream<Uint8Array>({
+        start(controller) {
+          const encoder = new TextEncoder()
+          const send = () => controller.enqueue(encoder.encode("event: update\ndata: {}\n\n"))
+          controller.enqueue(encoder.encode(": connected\n\n"))
+          const unsubscribe = store.subscribe(send)
+          const heartbeat = setInterval(() => controller.enqueue(encoder.encode(": heartbeat\n\n")), 20_000)
+          const close = () => {
+            clearInterval(heartbeat)
+            unsubscribe()
+            try {
+              controller.close()
+            } catch {
+              /* Already closed. */
+            }
+          }
+          cleanup = close
+          request.signal.addEventListener("abort", close, { once: true })
+        },
+        cancel() {
+          cleanup()
+        },
+      })
+      return new Response(stream, {
+        headers: {
+          "Content-Type": "text/event-stream; charset=utf-8",
+          "Cache-Control": "no-store",
+          Connection: "keep-alive",
+          "X-Accel-Buffering": "no",
+        },
+      })
     })
 }

@@ -1,4 +1,7 @@
 import { describe, expect, test } from "bun:test"
+import { mkdtempSync, readFileSync, rmSync } from "node:fs"
+import { tmpdir } from "node:os"
+import { join } from "node:path"
 import { ScrapeError } from "@trawl/tiers"
 import { MetricsStore } from "./metrics"
 
@@ -74,5 +77,36 @@ describe("local metrics", () => {
     expect(snapshot.lastHour[0]?.requests).toBe(0)
     expect(snapshot.domains).toHaveLength(20)
     expect(snapshot.domains.some((entry) => entry.domain === "ok.example")).toBe(false)
+  })
+
+  test("persists real events across reopen, keeps only hostnames, and filters time ranges", () => {
+    const dir = mkdtempSync(join(tmpdir(), "trawl-metrics-"))
+    const path = join(dir, "events.sqlite")
+    try {
+      const first = new MetricsStore(true, path)
+      first.record({
+        source: "mcp",
+        url: "https://user:password@history.example/private?token=secret",
+        durationMs: 17,
+        tier: 2,
+        statusCode: 200,
+      })
+      first.close()
+      const second = new MetricsStore(true, path)
+      const snapshot = second.snapshot(1440)
+      expect(snapshot.requests).toBe(1)
+      expect(snapshot.recentEvents[0]).toMatchObject({
+        domain: "history.example",
+        source: "mcp",
+        durationMs: 17,
+        success: true,
+      })
+      expect(snapshot.timeline.reduce((sum, point) => sum + point.requests, 0)).toBe(1)
+      expect(JSON.stringify(snapshot)).not.toMatch(/private|secret|password/)
+      second.close()
+      expect(readFileSync(path).toString()).not.toMatch(/private|secret|password/)
+    } finally {
+      rmSync(dir, { recursive: true, force: true })
+    }
   })
 })

@@ -145,20 +145,23 @@ streamed responses are counted when their headers arrive; later stream errors
 are not tracked. WebSocket relays and requests rejected before the scraper starts
 are not counted.
 
-It shows request totals, success rate, average elapsed time, stacked activity
-bars for the last 15 or 60 minutes, and tier, source, and failure-cause bars.
-The dashboard refreshes every 10 seconds; it can be paused or refreshed manually.
-Recent failures can be filtered by hostname, cause or source. The Export JSON
-button downloads the current local snapshot, including retained hostnames, to
-the browser. Categories are `blocked`, `timeout`, `capacity`, `network`, `http` and `internal`; they are
-best-effort classifications, not a diagnosis of a target site. `warning` means
-a target, network or capacity issue; `error` covers HTTP 5xx and unclassified
-internal failures.
+The dashboard shows request totals, success rate, average elapsed time, activity
+charts for 15 minutes, 1 hour, 24 hours, 7 days or 30 days, and tier, source,
+and failure-cause breakdowns. It also lists the latest 100 completed requests
+with timestamps, domains, duration, status and outcome, plus the latest 50 failures.
+The authenticated `GET /dashboard/events` stream signals new activity immediately;
+the page refreshes its snapshot when an event arrives and falls back to periodic
+refresh. The live view can be paused or refreshed manually. Export JSON downloads
+the selected snapshot. Categories are `blocked`, `timeout`, `capacity`, `network`,
+`http` and `internal`; they are best-effort classifications.
 
-Metrics collection is disabled until the token is set. Metrics remain in this
-API process only and reset on restart. The collector retains at most 100 recent
-hostnames, 50 recent failure entries and 60 minute buckets; the dashboard shows
-at most 20 hostnames. URL paths, queries, fragments, credentials, raw error
-messages, HTML, headers and cookies are never stored in it. No metrics are sent
-to a remote server. The existing public `/stats` response contains only browser
+Metrics collection is disabled until the token is set. By default, history is
+stored in SQLite at `/data/metrics/trawl.sqlite`; set `METRICS_DB_PATH` to change
+it. Docker Compose mounts a named volume at `/data/metrics`. History survives
+container restarts and is retained for 30 days, with a cap of 50,000 completed
+request records. All displayed counts are for the selected period. URL paths,
+queries, fragments, credentials, raw error messages, HTML, headers and cookies
+are never stored. No metrics are sent to a remote server. The history begins
+when persistent collection is first enabled; old Docker logs are not imported.
+The existing public `/stats` response contains only browser
 pool capacity and does not expose target hostnames.

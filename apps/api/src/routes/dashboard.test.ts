@@ -32,6 +32,8 @@ describe("local metrics dashboard", () => {
     expect(noAuth.status).toBe(401)
     expect(wrongAuth.status).toBe(401)
     expect(await wrongAuth.text()).not.toContain("sensitive.example")
+    const noStreamAuth = await app.handle(new Request("http://localhost/dashboard/events"))
+    expect(noStreamAuth.status).toBe(401)
 
     const authorized = await app.handle(
       new Request("http://localhost/dashboard/metrics", { headers: { authorization: `Bearer ${TOKEN}` } }),
@@ -41,5 +43,32 @@ describe("local metrics dashboard", () => {
     const body = await authorized.json()
     expect(body.domains[0].domain).toBe("sensitive.example")
     expect(JSON.stringify(body)).not.toContain("secret=1")
+    expect(body.recentEvents[0].domain).toBe("sensitive.example")
+    const day = await app.handle(
+      new Request("http://localhost/dashboard/metrics?minutes=1440", { headers: { authorization: `Bearer ${TOKEN}` } }),
+    )
+    expect((await day.json()).rangeMinutes).toBe(1440)
+  })
+
+  test("streams an update after a completed request", async () => {
+    const store = new MetricsStore()
+    const controller = new AbortController()
+    const app = dashboardRoute(TOKEN, store)
+    const response = await app.handle(
+      new Request("http://localhost/dashboard/events", {
+        headers: { authorization: `Bearer ${TOKEN}` },
+        signal: controller.signal,
+      }),
+    )
+    expect(response.status).toBe(200)
+    expect(response.headers.get("content-type")).toContain("text/event-stream")
+    const reader = response.body?.getReader()
+    expect(reader).toBeDefined()
+    expect(new TextDecoder().decode((await reader?.read())?.value)).toContain("connected")
+    store.record({ source: "native", url: "https://events.example/", statusCode: 200, durationMs: 2 })
+    expect(new TextDecoder().decode((await reader?.read())?.value)).toContain("event: update")
+    controller.abort()
+    await reader?.cancel()
+    store.close()
   })
 })
