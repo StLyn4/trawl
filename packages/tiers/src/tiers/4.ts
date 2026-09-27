@@ -168,6 +168,7 @@ export async function runTier4(
       ? await capturePageScreenshot(page, maxTimeout - (Date.now() - start), {
           fullPage: capture.screenshotFullPage,
           waitForSelector: capture.screenshotWaitForSelector,
+          selector: capture.screenshotSelector,
         })
       : undefined
     const evidence = await pageCapture.drain(maxTimeout - (Date.now() - start))

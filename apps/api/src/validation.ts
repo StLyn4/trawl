@@ -60,6 +60,20 @@ export function validateScrapeRequest(body: unknown): asserts body is ScrapeRequ
     )
   }
   if (
+    req.screenshotSelector !== undefined &&
+    (typeof req.screenshotSelector !== "string" ||
+      !req.screenshotSelector.trim() ||
+      req.screenshotSelector.length > 500)
+  ) {
+    throw new RequestValidationError(
+      "screenshotSelector must be a non-empty CSS selector of at most 500 characters",
+      400,
+    )
+  }
+  if (req.screenshotFullPage && req.screenshotSelector) {
+    throw new RequestValidationError("screenshotFullPage cannot be combined with screenshotSelector", 400)
+  }
+  if (
     req.contentWaitForSelector !== undefined &&
     (typeof req.contentWaitForSelector !== "string" ||
       !req.contentWaitForSelector.trim() ||

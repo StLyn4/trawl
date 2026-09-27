@@ -28,6 +28,7 @@ const CONSOLE_LEVELS: Record<string, ConsoleLogEntry["level"]> = {
 export interface CaptureOptions extends ResponseCaptureOptions {
   screenshotFullPage?: boolean
   screenshotWaitForSelector?: string
+  screenshotSelector?: string
   contentWaitForSelector?: string
   consoleLogs?: boolean
   networkLogs?: boolean

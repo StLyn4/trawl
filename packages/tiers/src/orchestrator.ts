@@ -108,6 +108,7 @@ export async function scrape(
   const capture = {
     screenshotFullPage: req.screenshotFullPage,
     screenshotWaitForSelector: req.screenshotWaitForSelector,
+    screenshotSelector: req.screenshotSelector,
     contentWaitForSelector: req.contentWaitForSelector,
     consoleLogs: req.consoleLogs,
     networkLogs: req.networkLogs,
