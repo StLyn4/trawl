@@ -155,10 +155,11 @@ export class MetricsStore {
       byTier: structuredClone(this.byTier),
       byFailure: { ...this.byFailure },
       bySeverity: { ...this.bySeverity },
-      lastHour: [...this.minutes]
-        .filter(([minute]) => minute >= Math.floor(Date.now() / 60_000) * 60_000 - (MAX_MINUTES - 1) * 60_000)
-        .sort(([a], [b]) => a - b)
-        .map(([minute, counts]) => ({ minute: new Date(minute).toISOString(), ...counts })),
+      lastHour: Array.from({ length: MAX_MINUTES }, (_, index) => {
+        const minute = Math.floor(Date.now() / 60_000) * 60_000 - (MAX_MINUTES - index - 1) * 60_000
+        const counts = this.minutes.get(minute) ?? { requests: 0, failures: 0 }
+        return { minute: new Date(minute).toISOString(), ...counts }
+      }),
       domains: [...this.domains]
         .map(([domain, counts]) => ({ domain, ...counts }))
         .sort((a, b) => b.failures - a.failures)
