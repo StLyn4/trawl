@@ -103,7 +103,10 @@ Lightweight public stats for dashboards and landing pages.
   "busy": 1,
   "restarts": 0,
   "stalled": 0,
-  "live": 5
+  "live": 5,
+  "queueDepth": 0,
+  "longestBusyMs": 12000,
+  "headful": null
 }
 ```
 
@@ -115,6 +118,8 @@ Lightweight public stats for dashboards and landing pages.
 | `restarts`  | number | Total browser restarts since startup |
 | `stalled`   | number | Checked-out browsers past their deadline |
 | `live`      | number | Connected, non-stalled browser capacity |
+| `queueDepth` | number | Requests currently waiting for a browser |
+| `longestBusyMs` | number | Milliseconds since the oldest active checkout began; zero when idle |
 
 ### Curl
 

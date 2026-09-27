@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Reclaim a browser that disconnects during an active checkout at the next health check, and expose queue depth and checkout age in `/stats` for diagnosing pool contention.
 - Keep tier attempt histories and MCP scrape metadata limited to status, duration and reason, excluding response bodies, headers and cookies.
 
 ## [1.6.5] - 2026-09-24
