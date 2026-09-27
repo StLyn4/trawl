@@ -47,6 +47,7 @@ describe("MCP route", () => {
       "scrape",
       "scrape_url",
       "read",
+      "extract",
       "screenshot",
       "inspect",
     ])
@@ -163,6 +164,71 @@ describe("MCP route", () => {
       screenshotFullPage: true,
       screenshotWaitForSelector: ".loaded",
     })
+  })
+
+  test("extracts repeated records with text and attributes", async () => {
+    const app = mcpRoute({
+      poolReady: () => true,
+      runScrape: async () => ({
+        ...baseResult,
+        html: '<html><body><div class="card"><h2>First</h2><a href="/one">Open</a></div><div class="card"><h2>Second</h2></div></body></html>',
+      }),
+    })
+    const response = await app.handle(
+      rpc("tools/call", {
+        name: "extract",
+        arguments: {
+          url: "https://1.1.1.1",
+          itemSelector: ".card",
+          fields: { title: { selector: "h2" }, link: { selector: "a", attribute: "href" } },
+          maxItems: 1,
+        },
+      }),
+    )
+    const result = (await response.json()).result
+    expect(result.isError).toBeUndefined()
+    expect(result.structuredContent.items).toEqual([{ title: "First", link: "/one" }])
+    expect(result.structuredContent).toMatchObject({ matched: 2, truncated: true })
+    expect(JSON.parse(result.content[0].text)).toEqual(result.structuredContent.items)
+  })
+
+  test("extracts one document record and marks missing fields null", async () => {
+    const app = mcpRoute({
+      poolReady: () => true,
+      runScrape: async () => ({ ...baseResult, html: "<html><body><h1>Title</h1></body></html>" }),
+    })
+    const response = await app.handle(
+      rpc("tools/call", {
+        name: "extract",
+        arguments: {
+          url: "https://1.1.1.1",
+          fields: { title: { selector: "h1" }, missing: { selector: "a", attribute: "href" } },
+        },
+      }),
+    )
+    expect((await response.json()).result.structuredContent.items).toEqual([{ title: "Title", missing: null }])
+  })
+
+  test("rejects extraction limits and malformed selectors", async () => {
+    const app = mcpRoute({
+      poolReady: () => true,
+      runScrape: async () => ({ ...baseResult, html: "<html><body><h1>Title</h1></body></html>" }),
+    })
+    const tooMany = await app.handle(
+      rpc("tools/call", {
+        name: "extract",
+        arguments: { url: "https://1.1.1.1", fields: { title: { selector: "h1" } }, maxItems: 101 },
+      }),
+    )
+    expect((await tooMany.json()).result.isError).toBe(true)
+
+    const malformed = await app.handle(
+      rpc("tools/call", {
+        name: "extract",
+        arguments: { url: "https://1.1.1.1", itemSelector: "[", fields: { title: { selector: "h1" } } },
+      }),
+    )
+    expect((await malformed.json()).result.isError).toBe(true)
   })
 
   test("returns browser diagnostics while redacting URL credentials and query strings", async () => {

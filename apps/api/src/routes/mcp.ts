@@ -11,6 +11,7 @@ import * as z from "zod/v4"
 import pkg from "../../package.json"
 import { MCP_ALLOWED_ORIGINS } from "../config"
 import { getDeps, getPool } from "../deps"
+import { extractFields } from "../mcpExtraction"
 import { assertPublicHttpUrl, createPublicUrlValidator } from "../outbound-policy"
 import { runLoggedScrape } from "../requestLogging"
 
@@ -53,6 +54,10 @@ const metadataSchema = {
   totalMs: z.number(),
 }
 const toolAnnotations = { readOnlyHint: true, openWorldHint: true } as const
+const fieldSchema = z.strictObject({
+  selector: z.string().min(1).max(500).describe("CSS selector relative to each item"),
+  attribute: z.string().min(1).max(64).optional().describe("HTML attribute to return; defaults to text content"),
+})
 
 function errorResult(error: unknown) {
   let message = error instanceof Error ? error.message : String(error)
@@ -112,7 +117,7 @@ function createServer(poolReady: () => boolean, runScrape: RunScrape): McpServer
     { name: "trawl", version: pkg.version },
     {
       instructions:
-        "Use read for concise article content, scrape for source HTML, screenshot for visual inspection, and inspect for browser diagnostics. TRAWL fetches known URLs; it does not search the web.",
+        "Use read for article content, scrape for source HTML, extract for CSS-selected JSON records, screenshot for visual inspection, and inspect for browser diagnostics. TRAWL fetches known URLs; it does not search the web.",
     },
   )
 
@@ -238,6 +243,44 @@ function createServer(poolReady: () => boolean, runScrape: RunScrape): McpServer
             ...(readable.siteName ? { siteName: readable.siteName } : {}),
             ...(readable.language ? { language: readable.language } : {}),
           },
+        }
+      } catch (error) {
+        return errorResult(error)
+      }
+    },
+  )
+
+  server.registerTool(
+    "extract",
+    {
+      title: "Extract page fields",
+      description:
+        "Extract bounded JSON records from a known public page using CSS selectors. Set itemSelector for a repeated list; field selectors are relative to each item.",
+      inputSchema: z.strictObject({
+        ...baseInputShape,
+        itemSelector: z.string().min(1).max(500).optional().describe("CSS selector matching repeated items"),
+        fields: z
+          .record(z.string().regex(/^[A-Za-z][A-Za-z0-9_]{0,63}$/), fieldSchema)
+          .refine((fields) => Object.keys(fields).length >= 1 && Object.keys(fields).length <= 20, {
+            message: "Provide 1 to 20 fields",
+          }),
+        maxItems: z.number().int().min(1).max(100).optional().describe("Maximum records; defaults to 25"),
+      }),
+      outputSchema: {
+        ...metadataSchema,
+        items: z.array(z.record(z.string(), z.string().nullable())),
+        matched: z.number().int(),
+        truncated: z.boolean(),
+      },
+      annotations: toolAnnotations,
+    },
+    async ({ itemSelector, fields, maxItems = 25, ...input }) => {
+      try {
+        const result = await runSafe(input)
+        const extracted = extractFields(result.html, itemSelector, fields, maxItems)
+        return {
+          content: [{ type: "text", text: JSON.stringify(extracted.items) }],
+          structuredContent: { ...metadata(result), ...extracted },
         }
       } catch (error) {
         return errorResult(error)
