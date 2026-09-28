@@ -22,6 +22,13 @@ Much faster and more reliable FlareSolverr & Byparr alternative and drop-in repl
 - **Session cache** - solved cookies and browser identity stored in Redis; accepted sessions can avoid a fresh solve
 - **FlareSolverr compatible** - works with Prowlarr, Jackett, Sonarr, and the full \*arr ecosystem out of the box
 - **No paid solver API required** - reCAPTCHA audio can use Google's free STT endpoint or an optional local Whisper service
+- **Local metrics dashboard** - persistent request history, tier outcomes, failure causes, and live updates
+
+## Local dashboard
+
+![TRAWL metrics dashboard showing illustrative request data](apps/docs/public/screenshots/dashboard.png)
+
+The screenshot uses illustrative traffic. Your dashboard at `http://localhost:8191/dashboard` displays only requests handled by your TRAWL instance. See the [metrics guide](apps/docs/api-reference/health-stats.md#local-metrics-dashboard) for setup.
 
 ## Sponsors
 
