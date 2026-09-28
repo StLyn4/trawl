@@ -135,9 +135,10 @@ export class MetricsStore {
     }
   }
 
-  record(event: MetricEvent, at = Date.now()): void {
+  record(event: MetricEvent): void {
     const db = this.db
     if (!db) return
+    const at = Date.now()
     const attempts = event.attempts ?? (event.error instanceof ScrapeError ? event.error.timings : [])
     const success =
       event.error === undefined && event.statusCode !== undefined && event.statusCode >= 200 && event.statusCode < 400

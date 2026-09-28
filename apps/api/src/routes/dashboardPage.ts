@@ -1,4 +1,4 @@
-export const dashboardPage = (requiresToken: boolean, demo = false) => `<!doctype html>
+export const dashboardPage = (requiresToken: boolean) => `<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
@@ -7,10 +7,9 @@ export const dashboardPage = (requiresToken: boolean, demo = false) => `<!doctyp
 :root{font:13px "Geist Mono","JetBrains Mono","Fira Code",ui-monospace,SFMono-Regular,Menlo,monospace;color:#f0f0f2;background:#0d0d10;color-scheme:dark;--accent:#00e87a;--surface:#17171b;--border:#2a2a30;--muted:#9898a6}
 *{box-sizing:border-box}body{max-width:1440px;margin:auto;padding:0 36px 72px;min-height:100vh;background:radial-gradient(ellipse 55% 22% at 48% 0%,#00e87a0a,transparent 75%)}
 h1,h2,p{margin-top:0}h1{font-size:clamp(29px,3.3vw,46px);font-weight:700;letter-spacing:-.055em;line-height:1.08;margin:0 0 12px}h2{font-size:15px;font-weight:650;letter-spacing:-.03em;margin-bottom:5px}p,small{color:var(--muted)}.muted{color:var(--muted)}.accent{color:var(--accent)}
-header{height:68px;display:flex;align-items:center;justify-content:space-between;gap:18px;border-bottom:1px solid var(--border)}.brand,.header-actions{display:flex;align-items:center;gap:18px}.wordmark{font-size:18px;font-weight:800;letter-spacing:-.09em}.brand-path{color:var(--muted);font-size:12px;border-left:1px solid var(--border);padding-left:18px}.demo-link{font-size:11px;color:var(--muted);text-decoration:none;letter-spacing:.02em}.demo-link:hover{color:var(--accent)}
-.status{display:flex;align-items:center;gap:8px;color:#c5c5cd;font-size:11px;text-transform:uppercase;letter-spacing:.08em}.status-dot{width:7px;height:7px;background:#74747e}.status.live .status-dot{background:var(--accent);box-shadow:0 0 0 3px #00e87a20}.status.demo .status-dot{background:#edb568}.status.paused .status-dot{background:#edb568}
+header{height:68px;display:flex;align-items:center;justify-content:space-between;gap:18px;border-bottom:1px solid var(--border)}.brand,.header-actions{display:flex;align-items:center;gap:18px}.wordmark{font-size:18px;font-weight:800;letter-spacing:-.09em}.brand-path{color:var(--muted);font-size:12px;border-left:1px solid var(--border);padding-left:18px}
+.status{display:flex;align-items:center;gap:8px;color:#c5c5cd;font-size:11px;text-transform:uppercase;letter-spacing:.08em}.status-dot{width:7px;height:7px;background:#74747e}.status.live .status-dot{background:var(--accent);box-shadow:0 0 0 3px #00e87a20}.status.paused .status-dot{background:#edb568}
 .intro{padding:38px 0 31px}.intro p{font-size:12px;margin:0}.eyebrow{display:flex;align-items:center;gap:12px;font-size:10px;font-weight:650;letter-spacing:.16em;color:var(--accent);margin-bottom:16px}.intro-rule{width:28px;height:1px;background:#3a3a40}
-.demo-banner{display:flex;align-items:center;gap:12px;padding:12px 15px;margin:-8px 0 20px;border:1px solid #785d33;background:#a96d1712;color:#d9c7a8;font-size:11px}.demo-banner strong{color:#ffd192;letter-spacing:.1em}.demo-pulse{width:7px;height:7px;background:#f1aa58;flex:none}
 button,input{font:inherit}button{cursor:pointer;border:1px solid #3a3a42;background:#1b1b20;color:#e5e5e8;border-radius:0;padding:9px 12px;transition:background .15s,border-color .15s}button:hover{background:#26262c;border-color:#5a5a64}button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}.primary{background:var(--accent);border-color:var(--accent);color:#07140e;font-weight:700}.primary:hover{background:#31f096}
 #login{display:flex;gap:8px;max-width:510px;margin:0 0 24px}#login input{flex:1;min-width:0}input{border:1px solid #3a3a42;border-radius:0;background:#1b1b20;color:#f0f0f2;padding:9px 11px}input::placeholder{color:#777782}#error{color:#ffad91;min-height:18px;margin:0}
 .toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:0 0 15px;flex-wrap:wrap}.toolbar-group{display:flex;align-items:center;gap:5px;flex-wrap:wrap}.toolbar button{font-size:11px}.range[aria-pressed="true"]{background:#00e87a18;border-color:var(--accent);color:var(--accent)}.toolbar-label{font-size:10px;color:var(--muted);margin-right:8px;letter-spacing:.07em}
@@ -21,17 +20,16 @@ button,input{font:inherit}button{cursor:pointer;border:1px solid #3a3a42;backgro
 .table-scroll{overflow:auto;max-height:410px}table{width:100%;border-collapse:collapse;font-size:11px;text-align:left}th{position:sticky;top:0;background:var(--surface);color:#a7a7b2;font-weight:600;white-space:nowrap;text-transform:uppercase;font-size:10px;letter-spacing:.04em}th,td{padding:11px 9px;border-bottom:1px solid var(--border)}td{color:#d3d3d8}td:first-child,th:first-child{padding-left:0}td:last-child,th:last-child{padding-right:0}td.number{font-variant-numeric:tabular-nums;text-align:right}th.number{text-align:right}.failure-search{width:min(310px,100%);font-size:11px}.footnote{font-size:10px;color:#82828e;margin:18px 1px}
 [hidden]{display:none!important}.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 @media(max-width:900px){body{padding:0 18px 55px}.layout{grid-template-columns:1fr}.wide{grid-column:1}.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media(max-width:600px){header{height:62px}.brand,.header-actions{gap:10px}.brand-path{padding-left:10px}.demo-link{font-size:10px}.intro{padding:28px 0 24px}.toolbar{align-items:flex-start}.toolbar-group{width:100%}.kpi{padding:16px}.kpi strong{font-size:26px}.panel{padding:16px}.meter-row{grid-template-columns:70px minmax(0,1fr) 64px;gap:7px}}
+@media(max-width:600px){header{height:62px}.brand,.header-actions{gap:10px}.brand-path{padding-left:10px}.intro{padding:28px 0 24px}.toolbar{align-items:flex-start}.toolbar-group{width:100%}.kpi{padding:16px}.kpi strong{font-size:26px}.panel{padding:16px}.meter-row{grid-template-columns:70px minmax(0,1fr) 64px;gap:7px}}
 </style>
 </head>
-<body data-auth-required="${requiresToken}" data-demo="${demo}">
-<header><div class="brand"><span class="wordmark">trawl<span class="accent">.</span></span><span class="brand-path">/ metrics</span></div><div class="header-actions"><a class="demo-link" href="${demo ? "/dashboard" : "/dashboard?demo=1"}">${demo ? "← live dashboard" : "view sample data ↗"}</a><div id="status" class="status"><span class="status-dot"></span><span id="status-text">Locked</span></div></div></header>
+<body data-auth-required="${requiresToken}">
+<header><div class="brand"><span class="wordmark">trawl<span class="accent">.</span></span><span class="brand-path">/ metrics</span></div><div class="header-actions"><div id="status" class="status"><span class="status-dot"></span><span id="status-text">Locked</span></div></div></header>
 <div class="intro"><div class="eyebrow">LOCAL OBSERVABILITY <span class="intro-rule"></span> SCRAPE ACTIVITY</div><h1>every request<span class="accent">.</span> in view<span class="accent">.</span></h1><p>Persistent history, tier outcomes and failure signals from this TRAWL instance.</p></div>
-${demo ? '<div class="demo-banner"><span class="demo-pulse"></span><strong>DEMO DATA</strong><span>Illustrative traffic for screenshots. Your local history stays untouched.</span></div>' : ""}
 <form id="login"${requiresToken ? "" : " hidden"}><input id="token" type="password" autocomplete="off" placeholder="Dashboard token" aria-label="Dashboard token" required><button class="primary">Open dashboard</button></form>
 <p id="error" role="alert"></p>
 <main id="content" hidden>
-<div class="toolbar"><div class="toolbar-group"><span class="toolbar-label">TIME RANGE</span><button class="range" data-minutes="15" aria-pressed="false">15 min</button><button class="range" data-minutes="60" aria-pressed="true">60 min</button><button class="range" data-minutes="1440" aria-pressed="false">24 h</button><button class="range" data-minutes="10080" aria-pressed="false">7 d</button><button class="range" data-minutes="43200" aria-pressed="false">30 d</button></div><div class="toolbar-group"><span id="updated" class="toolbar-label">Waiting for data</span><button id="refresh" type="button">Refresh</button><button id="pause" type="button" aria-pressed="false"${demo ? " hidden" : ""}>Pause live</button><button id="export" type="button">Export JSON</button></div></div>
+<div class="toolbar"><div class="toolbar-group"><span class="toolbar-label">TIME RANGE</span><button class="range" data-minutes="15" aria-pressed="false">15 min</button><button class="range" data-minutes="60" aria-pressed="true">60 min</button><button class="range" data-minutes="1440" aria-pressed="false">24 h</button><button class="range" data-minutes="10080" aria-pressed="false">7 d</button><button class="range" data-minutes="43200" aria-pressed="false">30 d</button></div><div class="toolbar-group"><span id="updated" class="toolbar-label">Waiting for data</span><button id="refresh" type="button">Refresh</button><button id="pause" type="button" aria-pressed="false">Pause live</button><button id="export" type="button">Export JSON</button></div></div>
 <div class="kpis"><div class="kpi"><strong id="requests">0</strong><span>TRAWL scrape requests</span></div><div class="kpi"><strong id="success-rate">0%</strong><span>Success rate</span></div><div class="kpi"><strong id="failures">0</strong><span>Failures</span></div><div class="kpi"><strong id="average">0 ms</strong><span>Average duration</span></div></div>
 <div class="layout">
 <section class="panel wide"><div class="panel-head"><div><h2>Request activity</h2><p>Completed requests in the selected period · hover or focus a bar for details</p></div><div class="legend"><span><i class="key good"></i>Success</span><span><i class="key bad"></i>Failure</span></div></div><svg id="trend" role="img" aria-label="Successful and failed requests over time" viewBox="0 0 720 220"></svg><div id="trend-tooltip" class="trend-tooltip" role="tooltip" hidden></div><p id="trend-summary" class="sr-only"></p></section>
@@ -46,13 +44,12 @@ ${demo ? '<div class="demo-banner"><span class="demo-pulse"></span><strong>DEMO 
 <script>
 let token = '';
 const authRequired = document.body.dataset.authRequired === 'true';
-const demoMode = document.body.dataset.demo === 'true';
 let timer;
 let streamAbort;
 let reconnectTimer;
 let paused = false;
 let loading = false;
-let minutes = demoMode ? 1440 : window.matchMedia('(max-width: 600px)').matches ? 15 : 60;
+let minutes = window.matchMedia('(max-width: 600px)').matches ? 15 : 60;
 let currentData;
 const byId = id => document.getElementById(id);
 const svgNS = 'http://www.w3.org/2000/svg';
@@ -248,10 +245,8 @@ function render(data) {
     new Date(item.at).toLocaleString(), item.domain, item.source, item.tier ?? '—',
     item.statusCode ?? '—', number(item.durationMs) + ' ms', item.success ? 'Success' : (item.category ?? 'Failure')
   ]), 'No requests recorded in this period');
-  byId('history-note').textContent = demoMode
-    ? 'Illustrative sample data · reserved .example domains · never written to local history'
-    : 'Hostnames only · local history' + (data.startedAt ? ' since ' + new Date(data.startedAt).toLocaleString() : ' starts with the first request') + ' · ' + number(data.retainedEvents) + ' retained events · no remote telemetry';
-  byId('updated').textContent = (demoMode ? 'Sample generated ' : 'Updated ') + new Date().toLocaleTimeString();
+  byId('history-note').textContent = 'Hostnames only · local history' + (data.startedAt ? ' since ' + new Date(data.startedAt).toLocaleString() : ' starts with the first request') + ' · ' + number(data.retainedEvents) + ' retained events · no remote telemetry';
+  byId('updated').textContent = 'Updated ' + new Date().toLocaleTimeString();
 }
 
 function setStatus(state, label) {
@@ -263,7 +258,7 @@ async function refresh() {
   if (loading || (authRequired && !token)) return;
   loading = true;
   try {
-    const response = await fetch('/dashboard/metrics?minutes=' + minutes + (demoMode ? '&demo=1' : ''), {
+    const response = await fetch('/dashboard/metrics?minutes=' + minutes, {
       headers: token ? { Authorization: 'Bearer ' + token } : {}, cache: 'no-store'
     });
     if (!response.ok) throw Error(response.status === 401 ? 'Invalid token' : 'Metrics unavailable');
@@ -271,7 +266,7 @@ async function refresh() {
     byId('error').textContent = '';
     byId('content').hidden = false;
     byId('login').hidden = true;
-    setStatus(demoMode ? 'demo' : paused ? 'paused' : 'live', demoMode ? 'Sample data' : paused ? 'Paused' : 'Live');
+    setStatus(paused ? 'paused' : 'live', paused ? 'Paused' : 'Live');
   } catch (error) {
     byId('error').textContent = error.message;
     setStatus('', 'Connection issue');
@@ -316,7 +311,6 @@ async function connectEvents() {
 
 function startUpdates() {
   refresh();
-  if (demoMode) return;
   connectEvents();
   if (!timer) timer = setInterval(() => { if (!paused) refresh(); }, 30000);
 }
