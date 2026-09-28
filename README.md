@@ -7,28 +7,25 @@
 
 ## **Welcome** to <a href="https://trawl.germondai.com" target="_blank">**TRAWL**</a>! 👋
 
-Self-hosted web scraping engine with best-effort JS challenge and CAPTCHA solving.\
-Dedicated flows for Cloudflare, Akamai Bot Manager, and Imperva/Incapsula (best effort), plus Turnstile, reCAPTCHA, hCaptcha, GeeTest, ALTCHA, and Friendly Captcha.\
-Much faster and more reliable FlareSolverr & Byparr alternative and drop-in replacement for your \*arr stack.
+Self-hosted web scraping for applications and AI agents. Fetch pages through the native API, or connect an MCP client to read clean Markdown, extract structured data, capture screenshots, and inspect browser activity.
+
+TRAWL starts with a fast HTTP request, reuses solved browser sessions, and escalates to Camoufox and an optional residential proxy when a site requires more work. It handles supported JavaScript challenges and CAPTCHAs, and gives you a local dashboard to see what succeeded, failed, and took time.
+
+For existing FlareSolverr users, the compatible `/v1` endpoint works with Prowlarr and other \*arr tools. TRAWL's adaptive routing and session reuse are designed for faster, more reliable requests; [selected same-machine benchmarks](https://trawl.germondai.com/#compare) show faster responses than FlareSolverr and Byparr, with results varying by site and session state.
 
 ## Features
 
-- **2-6x faster** - compared to FlareSolverr or Byparr it returns much faster with higher success rate
-- **4-tier execution** - plain HTTP fetch → cached browser session → fresh challenge solve → residential proxy
+- **MCP tools for AI agents** - read pages as Markdown or text, scrape HTML, extract JSON records, capture screenshots, and inspect browser diagnostics from known public URLs
+- **4-tier execution** - plain HTTP fetch → cached browser session → fresh challenge solve → optional residential proxy
+- **Structured extraction and screenshots** - select fields from repeated elements, render JavaScript pages, and capture a viewport, full page, or specific element
 - **Challenge-aware HTTP/HTTPS proxy** - direct forwarding for normal traffic, automatic tier escalation for detected walls, plus WebSockets, binary bodies, and Range/206 support
+- **Local metrics dashboard** - persistent request history, tier outcomes, failure causes, and live updates
 - **Multi-WAF handling** - dedicated Cloudflare, Akamai Bot Manager, and Imperva/Incapsula detection and browser flows
 - **Native captcha solving** - CF Turnstile/Interstitial, reCAPTCHA v2 (free STT), hCaptcha, GeeTest v4 Slide, ALTCHA, and Friendly Captcha v1/v2
 - **Camoufox Firefox** - fingerprint-patched at the C++/Juggler level to reduce automation signals
 - **Session cache** - solved cookies and browser identity stored in Redis; accepted sessions can avoid a fresh solve
 - **FlareSolverr compatible** - works with Prowlarr, Jackett, Sonarr, and the full \*arr ecosystem out of the box
 - **No paid solver API required** - reCAPTCHA audio can use Google's free STT endpoint or an optional local Whisper service
-- **Local metrics dashboard** - persistent request history, tier outcomes, failure causes, and live updates
-
-## Local dashboard
-
-![TRAWL metrics dashboard showing illustrative request data](apps/docs/public/screenshots/dashboard.png)
-
-The screenshot uses illustrative traffic. Your dashboard at `http://localhost:8191/dashboard` displays only requests handled by your TRAWL instance. See the [metrics guide](apps/docs/api-reference/health-stats.md#local-metrics-dashboard) for setup.
 
 ## Sponsors
 
@@ -91,6 +88,12 @@ The screenshot uses illustrative traffic. Your dashboard at `http://localhost:81
     </tr>
   </table>
 </details>
+
+## Local dashboard
+
+![TRAWL metrics dashboard showing illustrative request data](apps/docs/public/screenshots/dashboard.png)
+
+The screenshot uses illustrative traffic. Your dashboard at `http://localhost:8191/dashboard` displays only requests handled by your TRAWL instance. See the [metrics guide](apps/docs/api-reference/health-stats.md#local-metrics-dashboard) for setup.
 
 ## Quick start
 
