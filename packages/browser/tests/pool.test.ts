@@ -492,6 +492,57 @@ describe("BrowserPool wedge recovery", () => {
     expect(handle.id).toBe(0)
   })
 
+  test("reclaims a disconnected browser during checkout without waiting for its budget", async () => {
+    const { factory, browsers } = makeFactory()
+    const pool = createPool({
+      poolSize: 1,
+      stallAfterMs: 60_000,
+      healthIntervalMs: 20,
+      browserFactory: factory,
+    })
+    await pool.init()
+    pool.startHealthCheck()
+
+    const abandoned = await pool.acquire("example.com", 60_000)
+    browsers[0].closed = true
+    await waitFor(() => pool.getStats().restarts === 1)
+
+    const current = await pool.acquire("example.com")
+    pool.release(abandoned.id, abandoned.lease)
+    expect(pool.getStats().busy).toBe(1)
+    pool.release(current.id, current.lease)
+    expect(pool.getStats().available).toBe(1)
+  })
+
+  test("reports active checkout age and real queue depth", async () => {
+    const { factory } = makeFactory()
+    const pool = createPool({ poolSize: 1, acquireTimeoutMs: 80, pollIntervalMs: 10, browserFactory: factory })
+    await pool.init()
+
+    const first = await pool.acquire("example.com")
+    const waiting = pool.acquire("example.org")
+    expect(pool.getStats().queueDepth).toBe(1)
+    await new Promise((resolve) => setTimeout(resolve, 20))
+    expect(pool.getStats().longestBusyMs).toBeGreaterThanOrEqual(20)
+    pool.release(first.id, first.lease)
+    const second = await waiting
+    expect(pool.getStats().queueDepth).toBe(0)
+    pool.release(second.id, second.lease)
+    expect(pool.getStats().longestBusyMs).toBe(0)
+  })
+
+  test("clears queue depth when a waiting acquire times out", async () => {
+    const { factory } = makeFactory()
+    const pool = createPool({ poolSize: 1, acquireTimeoutMs: 30, pollIntervalMs: 10, browserFactory: factory })
+    await pool.init()
+    const held = await pool.acquire()
+    const waiting = pool.acquire()
+    expect(pool.getStats().queueDepth).toBe(1)
+    await expect(waiting).rejects.toThrow("Browser pool exhausted")
+    expect(pool.getStats().queueDepth).toBe(0)
+    pool.release(held.id, held.lease)
+  })
+
   test("a checkout inside the caller's own budget is never reclaimed", async () => {
     // Callers may pass req.maxTimeout larger than the stall threshold. Reclaiming on the
     // threshold alone would close the browser out from under a request that is still

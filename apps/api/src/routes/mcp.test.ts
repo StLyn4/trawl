@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test"
 import { PoolExhaustedError } from "@trawl/browser"
 import { ScrapeError } from "@trawl/tiers"
 import type { ScrapeResult } from "@trawl/types"
+import { MetricsStore } from "../metrics"
 import { MCP_HTML_MAX_CHARS, mcpRoute } from "./mcp"
 
 const baseResult: ScrapeResult = {
@@ -28,6 +29,15 @@ function rpc(method: string, params?: unknown, id = 1): Request {
 }
 
 describe("MCP route", () => {
+  test("records scrape calls rejected before the browser pool is ready", async () => {
+    const metricsStore = new MetricsStore()
+    const app = mcpRoute({ poolReady: () => false, metricsStore })
+    const response = await app.handle(rpc("tools/call", { name: "scrape_url", arguments: { url: "https://1.1.1.1" } }))
+    expect(response.status).toBe(200)
+    expect((await response.json()).result.isError).toBe(true)
+    expect(metricsStore.snapshot().recentEvents[0]).toMatchObject({ source: "mcp", domain: "1.1.1.1", success: false })
+    metricsStore.close()
+  })
   test("initializes and lists the focused tool set with the compatibility alias", async () => {
     const app = mcpRoute({ poolReady: () => true, runScrape: async () => baseResult })
     const initialized = await app.handle(

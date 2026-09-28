@@ -1,5 +1,6 @@
 import { Elysia } from "elysia"
 import { MCP_ENABLED } from "./config"
+import { dashboardRoute } from "./routes/dashboard"
 import { healthRoute } from "./routes/health"
 import { indexRoute } from "./routes/index"
 import { mcpRoute } from "./routes/mcp"
@@ -13,6 +14,7 @@ export function createApiApp({ mcpEnabled = MCP_ENABLED }: { mcpEnabled?: boolea
     .use(indexRoute())
     .use(healthRoute())
     .use(statsRoute())
+    .use(dashboardRoute())
     .use(v1Route())
     .use(scrapeRoute())
     .use(proxyCaRoute())

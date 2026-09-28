@@ -245,6 +245,10 @@ export interface PoolStats {
   // and will never call release(). `live` is the honest capacity number.
   stalled: number
   live: number
+  // Current acquire() callers waiting for a free browser, and the age of the oldest
+  // active checkout. Omitted by older pool implementations.
+  queueDepth?: number
+  longestBusyMs?: number
 }
 
 // Per-instance HTTP-level fingerprint (User-Agent + matching navigator.platform /

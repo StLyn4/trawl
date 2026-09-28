@@ -70,6 +70,16 @@ export const MCP_ALLOWED_ORIGINS = (process.env.MCP_ALLOWED_ORIGINS ?? "")
   .map((origin) => origin.trim())
   .filter(Boolean)
 
+// Setting a token enables the local metrics dashboard. The API may be exposed
+// beyond loopback, so target hostnames are never served without authentication.
+export const METRICS_DASHBOARD_TOKEN = process.env.METRICS_DASHBOARD_TOKEN?.trim() || undefined
+if (METRICS_DASHBOARD_TOKEN && METRICS_DASHBOARD_TOKEN.length < 32) {
+  throw new Error("METRICS_DASHBOARD_TOKEN must be at least 32 characters")
+}
+// Explicitly allow an unauthenticated dashboard only when the operator keeps
+// the published port on a trusted loopback interface.
+export const METRICS_DASHBOARD_ENABLED = /^(1|true|yes)$/i.test(process.env.METRICS_DASHBOARD_ENABLED ?? "")
+
 // How long a browser may stay checked out before the pool calls it wedged rather than
 // busy. A scrape's own budget is req.maxTimeout (default 60s), so 3x that is well clear
 // of anything legitimate while still catching a hung checkout within a few minutes.

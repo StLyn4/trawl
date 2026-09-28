@@ -101,6 +101,7 @@ export class BrowserPool {
   private maxAbandonedLaunches: number
   private replacementRunning = false
   private shuttingDown = false
+  private pendingAcquires = 0
 
   constructor({
     poolSize,
@@ -376,13 +377,16 @@ export class BrowserPool {
       if (tryAcquire()) return
 
       const deadline = Date.now() + this.acquireTimeoutMs
+      this.pendingAcquires++
       const poll = setInterval(() => {
         if (tryAcquire()) {
           clearInterval(poll)
+          this.pendingAcquires--
           return
         }
         if (Date.now() >= deadline) {
           clearInterval(poll)
+          this.pendingAcquires--
           reject(new PoolExhaustedError())
         }
       }, this.pollIntervalMs)
@@ -519,6 +523,13 @@ export class BrowserPool {
       if (entry.restarting) continue
 
       if (entry.busy) {
+        // A disconnected browser cannot finish the request that holds its lease.
+        // Reclaim it now instead of waiting for the request budget plus stall grace.
+        if (!this.isUsable(entry)) {
+          console.warn(`[${this.label}] browser ${entry.id} disconnected during checkout, reclaiming`)
+          await this.restartEntry(entry, "browser disconnected during checkout")
+          continue
+        }
         // We can't probe a checked-out browser — closing it would kill a live request.
         // But a checkout past the stall threshold is not a request any more: it never
         // reached the orchestrator's `finally`, so nothing will ever release it. Left
@@ -676,6 +687,11 @@ export class BrowserPool {
     // Busy entries that are still genuinely working: inside their deadline AND connected.
     const busyLive = this.entries.filter((e) => e.busy && !this.isStalled(e, now) && this.isUsable(e)).length
     const totalRestarts = this.entries.reduce((sum, e) => sum + e.restartCount, 0)
+    const longestBusyMs = this.entries.reduce(
+      (longest, entry) =>
+        entry.busy && entry.busySince !== undefined ? Math.max(longest, now - entry.busySince) : longest,
+      0,
+    )
     return {
       total: this.poolSize,
       busy,
@@ -686,6 +702,8 @@ export class BrowserPool {
       // Real capacity: idle-and-connected plus in-flight-and-connected. Excludes
       // restarting entries, wedged checkouts, and checkouts whose browser has died.
       live: available + busyLive,
+      queueDepth: this.pendingAcquires,
+      longestBusyMs,
     }
   }
 

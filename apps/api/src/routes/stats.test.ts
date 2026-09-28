@@ -16,7 +16,7 @@ const stats = (overrides: Partial<PoolStats> = {}): PoolStats => ({
 describe("GET /stats", () => {
   test("reports the optional headful pool additively", async () => {
     const response = await statsRoute(
-      () => stats({ total: 3, available: 2, busy: 1 }),
+      () => stats({ total: 3, available: 2, busy: 1, queueDepth: 2, longestBusyMs: 4200 }),
       () => stats({ total: 1, restarts: 2 }),
     ).handle(new Request("http://localhost/stats"))
 
@@ -27,8 +27,18 @@ describe("GET /stats", () => {
       stalled: 0,
       live: 1,
       restarts: 0,
-      queueDepth: 0,
-      headful: { browsers: 1, available: 1, busy: 0, stalled: 0, live: 1, restarts: 2 },
+      queueDepth: 2,
+      longestBusyMs: 4200,
+      headful: {
+        browsers: 1,
+        available: 1,
+        busy: 0,
+        stalled: 0,
+        live: 1,
+        restarts: 2,
+        queueDepth: 0,
+        longestBusyMs: 0,
+      },
     })
   })
 

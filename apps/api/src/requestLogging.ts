@@ -2,6 +2,7 @@ import { PoolExhaustedError } from "@trawl/browser"
 import { type OrchestratorDeps, ScrapeError, scrape } from "@trawl/tiers"
 import type { ScrapeRequest, ScrapeResult, TierResult } from "@trawl/types"
 import { log, requestId, safeMessage, safeUrl } from "./logger"
+import { type MetricsStore, metrics } from "./metrics"
 
 export type ScrapeSource = "native" | "flaresolverr" | "mcp" | "proxy"
 
@@ -11,6 +12,7 @@ export async function runLoggedScrape(
   deps: OrchestratorDeps,
   runScrape: typeof scrape = scrape,
   id = requestId(),
+  metricsStore: MetricsStore = metrics,
 ): Promise<ScrapeResult> {
   const started = Date.now()
   log("info", "scrape", {
@@ -42,6 +44,14 @@ export async function runLoggedScrape(
 
   try {
     const result = await runScrape(req, tracedDeps)
+    metricsStore.record({
+      source,
+      url: req.url,
+      durationMs: Date.now() - started,
+      tier: result.tier,
+      attempts: result.timings,
+      statusCode: result.statusCode,
+    })
     log("info", "scrape", {
       event: "request.success",
       request: id,
@@ -58,6 +68,7 @@ export async function runLoggedScrape(
     return result
   } catch (error) {
     const last = error instanceof ScrapeError ? error.timings.at(-1) : undefined
+    metricsStore.record({ source, url: req.url, durationMs: Date.now() - started, error })
     log(error instanceof PoolExhaustedError ? "warn" : "error", "scrape", {
       event: "request.failure",
       request: id,

@@ -57,6 +57,9 @@ services:
       FFMPEG_PATH: ${FFMPEG_PATH:-}
       MCP_ENABLED: ${MCP_ENABLED:-false}
       MCP_ALLOWED_ORIGINS: ${MCP_ALLOWED_ORIGINS:-}
+      METRICS_DASHBOARD_ENABLED: ${METRICS_DASHBOARD_ENABLED:-false}
+      METRICS_DASHBOARD_TOKEN: ${METRICS_DASHBOARD_TOKEN:-}
+      METRICS_DB_PATH: ${METRICS_DB_PATH:-/data/metrics/trawl.sqlite}
       SCRAPE_PROXY_SELECTION: ${SCRAPE_PROXY_SELECTION:-failover}
       PROXY_URL: ${PROXY_URL:-}
       PROXY_LIST_FILE: ${PROXY_LIST_FILE:-}
@@ -71,6 +74,7 @@ services:
       MITM_DEBUG: ${MITM_DEBUG:-false}
     volumes:
       - trawl_proxy_ca:${MITM_CA_DIR:-/data/proxy-ca}
+      - trawl_metrics:/data/metrics
     healthcheck:
       test: ["CMD", "curl", "-sf", "http://localhost:8191/health"]
       interval: 30s
@@ -80,3 +84,4 @@ services:
 
 volumes:
   trawl_proxy_ca:
+  trawl_metrics:

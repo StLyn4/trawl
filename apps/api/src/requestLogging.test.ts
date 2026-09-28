@@ -1,6 +1,7 @@
 import { describe, expect, spyOn, test } from "bun:test"
 import type { OrchestratorDeps } from "@trawl/tiers"
 import type { ScrapeResult } from "@trawl/types"
+import { MetricsStore } from "./metrics"
 import { runLoggedScrape } from "./requestLogging"
 
 const deps = (): OrchestratorDeps => ({
@@ -14,6 +15,39 @@ const deps = (): OrchestratorDeps => ({
 })
 
 describe("request logging", () => {
+  test("records scraper results without changing their response", async () => {
+    const store = new MetricsStore()
+    const result: ScrapeResult = {
+      url: "https://example.com/final",
+      html: "ok",
+      cookies: [],
+      userAgent: "test",
+      statusCode: 200,
+      tier: 1,
+      sessionCached: false,
+      timings: [{ tier: 1, status: "success", durationMs: 2 }],
+      totalMs: 3,
+    }
+    const output = spyOn(console, "log").mockImplementation(() => {})
+    try {
+      expect(
+        await runLoggedScrape(
+          "native",
+          { url: "https://example.com/private?token=1" },
+          deps(),
+          async () => result,
+          "test",
+          store,
+        ),
+      ).toBe(result)
+    } finally {
+      output.mockRestore()
+    }
+    expect(store.snapshot().requests).toBe(1)
+    expect(store.snapshot().byTier[1]).toEqual({ attempts: 1, successes: 1 })
+    expect(JSON.stringify(store.snapshot())).not.toContain("private")
+  })
+
   test("logs a redacted start, each tier, and a success summary", async () => {
     const lines: string[] = []
     const output = spyOn(console, "log").mockImplementation((line) => lines.push(String(line)))

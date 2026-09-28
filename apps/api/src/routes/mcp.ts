@@ -12,6 +12,7 @@ import pkg from "../../package.json"
 import { MCP_ALLOWED_ORIGINS } from "../config"
 import { getDeps, getPool } from "../deps"
 import { extractFields } from "../mcpExtraction"
+import { type MetricsStore, metrics } from "../metrics"
 import { assertPublicHttpUrl, createPublicUrlValidator } from "../outbound-policy"
 import { runLoggedScrape } from "../requestLogging"
 
@@ -39,6 +40,7 @@ interface McpRouteOptions {
   allowedOrigins?: string[]
   poolReady?: () => boolean
   runScrape?: RunScrape
+  metricsStore?: MetricsStore
 }
 
 const tierSchema = z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4)])
@@ -114,7 +116,7 @@ function extractReadable(html: string, url: string, format: "markdown" | "text")
   }
 }
 
-function createServer(poolReady: () => boolean, runScrape: RunScrape): McpServer {
+function createServer(poolReady: () => boolean, runScrape: RunScrape, metricsStore: MetricsStore): McpServer {
   const server = new McpServer(
     { name: "trawl", version: pkg.version },
     {
@@ -124,11 +126,27 @@ function createServer(poolReady: () => boolean, runScrape: RunScrape): McpServer
   )
 
   const runSafe = async (input: McpScrapeInput) => {
-    await assertPublicHttpUrl(input.url)
-    if (!poolReady()) throw new Error("Browser pool initializing, retry in a few seconds")
-    const result = await runScrape(input)
-    await assertPublicHttpUrl(result.url)
-    return result
+    const started = Date.now()
+    let scraperStarted = false
+    try {
+      await assertPublicHttpUrl(input.url)
+      if (!poolReady()) throw new Error("Browser pool initializing, retry in a few seconds")
+      scraperStarted = true
+      const result = await runScrape(input)
+      await assertPublicHttpUrl(result.url)
+      return result
+    } catch (error) {
+      if (!scraperStarted) {
+        metricsStore.record({
+          source: "mcp",
+          url: input.url,
+          durationMs: Date.now() - started,
+          statusCode: error instanceof RequestValidationError ? error.statusCode : 503,
+          error,
+        })
+      }
+      throw error
+    }
   }
 
   const scrapeHandler = async (input: {
@@ -418,6 +436,7 @@ function createServer(poolReady: () => boolean, runScrape: RunScrape): McpServer
 export function mcpRoute({
   allowedOrigins = MCP_ALLOWED_ORIGINS,
   poolReady = () => Boolean(getPool()),
+  metricsStore = metrics,
   runScrape = (input) => {
     const validateOutboundUrl = createPublicUrlValidator()
     const deps = {
@@ -437,7 +456,7 @@ export function mcpRoute({
       sessionIdGenerator: undefined,
       enableJsonResponse: true,
     })
-    const server = createServer(poolReady, runScrape)
+    const server = createServer(poolReady, runScrape, metricsStore)
     try {
       await server.connect(transport)
       return await transport.handleRequest(request)

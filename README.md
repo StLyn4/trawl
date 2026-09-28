@@ -7,15 +7,19 @@
 
 ## **Welcome** to <a href="https://trawl.germondai.com" target="_blank">**TRAWL**</a>! 👋
 
-Self-hosted web scraping engine with best-effort JS challenge and CAPTCHA solving.\
-Dedicated flows for Cloudflare, Akamai Bot Manager, and Imperva/Incapsula (best effort), plus Turnstile, reCAPTCHA, hCaptcha, GeeTest, ALTCHA, and Friendly Captcha.\
-Much faster and more reliable FlareSolverr & Byparr alternative and drop-in replacement for your \*arr stack.
+Self-hosted web scraping for applications and AI agents. Fetch pages through the native API, or connect an MCP client to read clean Markdown, extract structured data, capture screenshots, and inspect browser activity.
+
+TRAWL starts with a fast HTTP request, reuses solved browser sessions, and escalates to Camoufox and an optional residential proxy when a site requires more work. It handles supported JavaScript challenges and CAPTCHAs, and gives you a local dashboard to see what succeeded, failed, and took time.
+
+For existing FlareSolverr users, the compatible `/v1` endpoint works with Prowlarr and other \*arr tools. TRAWL's adaptive routing and session reuse are designed for faster, more reliable requests; [selected same-machine benchmarks](https://trawl.germondai.com/#compare) show faster responses than FlareSolverr and Byparr, with results varying by site and session state.
 
 ## Features
 
-- **2-6x faster** - compared to FlareSolverr or Byparr it returns much faster with higher success rate
-- **4-tier execution** - plain HTTP fetch → cached browser session → fresh challenge solve → residential proxy
+- **MCP tools for AI agents** - read pages as Markdown or text, scrape HTML, extract JSON records, capture screenshots, and inspect browser diagnostics from known public URLs
+- **4-tier execution** - plain HTTP fetch → cached browser session → fresh challenge solve → optional residential proxy
+- **Structured extraction and screenshots** - select fields from repeated elements, render JavaScript pages, and capture a viewport, full page, or specific element
 - **Challenge-aware HTTP/HTTPS proxy** - direct forwarding for normal traffic, automatic tier escalation for detected walls, plus WebSockets, binary bodies, and Range/206 support
+- **Local metrics dashboard** - persistent request history, tier outcomes, failure causes, and live updates
 - **Multi-WAF handling** - dedicated Cloudflare, Akamai Bot Manager, and Imperva/Incapsula detection and browser flows
 - **Native captcha solving** - CF Turnstile/Interstitial, reCAPTCHA v2 (free STT), hCaptcha, GeeTest v4 Slide, ALTCHA, and Friendly Captcha v1/v2
 - **Camoufox Firefox** - fingerprint-patched at the C++/Juggler level to reduce automation signals
@@ -84,6 +88,12 @@ Much faster and more reliable FlareSolverr & Byparr alternative and drop-in repl
     </tr>
   </table>
 </details>
+
+## Local dashboard
+
+![TRAWL metrics dashboard showing illustrative request data](apps/docs/public/screenshots/dashboard.png)
+
+The screenshot uses illustrative traffic. Your dashboard at `http://localhost:8191/dashboard` displays only requests handled by your TRAWL instance. See the [metrics guide](apps/docs/api-reference/health-stats.md#local-metrics-dashboard) for setup.
 
 ## Quick start
 
@@ -411,6 +421,9 @@ for pool and mounted-file examples.
 | -------------------------------- | ------------------------ | ----------------------------------------------------------------------------------- |
 | `BROWSER_POOL_SIZE`              | `1`                      | Warm Camoufox Firefox instances; raise for concurrent browser solves                |
 | `LOG_LEVEL`                      | `info`                   | Operational logs: `error`, `warn`, `info`, `debug`, or `silent`                     |
+| `METRICS_DASHBOARD_ENABLED`      | `false`                  | Explicitly enable the local dashboard without a token; bind its port to `127.0.0.1` |
+| `METRICS_DASHBOARD_TOKEN`        | —                        | Protect the dashboard, JSON endpoint, and live stream with a 32+ character token |
+| `METRICS_DB_PATH`                | `/data/metrics/trawl.sqlite` | SQLite path for local metrics history (mount `/data/metrics` persistently) |
 | `BROWSER_ACQUIRE_TIMEOUT_MS`     | `15000`                  | How long `acquire()` polls for a free browser before HTTP 429 is returned           |
 | `BROWSER_RECYCLE_AFTER_CONTEXTS` | `8`                      | Rolling-replace after this many Tier 3/4 contexts; set `0` to disable               |
 | `BROWSER_MAX_CONTENT_PROCESSES`  | `2`                      | Cap Firefox content processes per browser (`dom.ipc.processCount`); lowers RAM/CPU  |

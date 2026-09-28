@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test"
 import type { BrowserHandle } from "@trawl/browser"
 import type { OrchestratorDeps } from "@trawl/tiers"
 import type { SessionData } from "@trawl/types"
+import { MetricsStore } from "../metrics"
 import { scrapeRoute } from "./scrape"
 
 const WALL_HTML = `<html><head><title>Access denied</title></head><body><h1>403</h1>${"blocked ".repeat(40)}</body></html>`
@@ -65,6 +66,26 @@ const post = (body: unknown) =>
 const blockedRequest = { url: "https://example.com", skipHttp: true, maxTier: 2, maxTimeout: 4_000 }
 
 describe("POST /scrape on a blocked outcome", () => {
+  test("records requests rejected before the scraper starts", async () => {
+    const store = new MetricsStore()
+    const app = scrapeRoute(blockedDeps, () => null, store)
+    const send = (body: unknown) =>
+      app.handle(
+        new Request("http://localhost/scrape", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify(body),
+        }),
+      )
+    expect((await send({ url: "https://target.example" })).status).toBe(503)
+    expect((await send({ url: "" })).status).toBe(400)
+    const snapshot = store.snapshot()
+    expect(snapshot.requests).toBe(2)
+    expect(snapshot.failures).toBe(2)
+    expect(snapshot.recentEvents[0]?.domain).toBe("unknown")
+    expect(snapshot.recentEvents[1]?.domain).toBe("target.example")
+    store.close()
+  })
   test("still answers 500 with the per-tier attempt history", async () => {
     const response = await post(blockedRequest)
 
