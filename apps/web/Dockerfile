@@ -8,7 +8,7 @@ RUN bun --bun install
 COPY . ./
 RUN bunx --bun nuxt generate
 
-FROM nginx:1.30.5-alpine AS runner
+FROM nginx:1.31.6-alpine AS runner
 
 COPY --from=builder /app/.output/public /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/conf.d/default.conf

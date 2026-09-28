@@ -114,7 +114,7 @@ RUN curl -fsSL \
     rm /tmp/ubo.xpi
 
 # ── Stage 3: lean runtime (only API-required files) ────────────────────────────
-# debian:bookworm-slim replaces ubuntu:22.04 — same glibc family, ~50 MB smaller base.
+# Retain the older glibc base for the baseline image used on legacy NAS kernels.
 # Camoufox/Firefox require glibc; Alpine's musl is incompatible.
 FROM debian:bookworm-slim
 ENV DEBIAN_FRONTEND=noninteractive

@@ -114,9 +114,8 @@ RUN curl -fsSL \
     rm /tmp/ubo.xpi
 
 # ── Stage 3: lean runtime (only API-required files) ────────────────────────────
-# debian:bookworm-slim replaces ubuntu:22.04 — same glibc family, ~50 MB smaller base.
 # Camoufox/Firefox require glibc; Alpine's musl is incompatible.
-FROM debian:bookworm-slim
+FROM debian:trixie-slim
 ENV DEBIAN_FRONTEND=noninteractive
 
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \

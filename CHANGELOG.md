@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.7.0] - 2026-09-28
+
 ### Added
 
 - Add persistent, bounded SQLite scrape metrics and a local dashboard with live activity, readable history charts and hover details, optional loopback tokenless access, early request failures, request and failure details, and local JSON export (#178).
@@ -17,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Bump all application and internal package versions to `1.7.0`, refresh compatible transitive dependencies, update the standard API runtime base to Debian 13, and update the web and docs images to nginx `1.31.6`. Retain Debian 12 for the baseline image's legacy kernel target.
 - Align the local dashboard's typography, colors, and controls with the TRAWL landing page (#178).
 
 ### Fixed
