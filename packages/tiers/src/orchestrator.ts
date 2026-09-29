@@ -61,6 +61,7 @@ export interface OrchestratorDeps {
 }
 
 interface OrchestratorRunners {
+  tier1?: typeof runTier1
   tier2?: typeof runTier2
   tier3?: typeof runTier3
   tier4?: typeof runTier4
@@ -131,7 +132,7 @@ export async function scrape(
   const sanitizedHeaders = sanitizeHeaders(req.headers)
   requireContentTypeForBody(sanitizedHeaders, Boolean(req.body))
 
-  const emit = (r: TierResult) => {
+  const emit = (r: TierResult & { [key: string]: unknown } | any) => {
     const publicResult: TierResult = {
       tier: r.tier,
       status: r.status,
@@ -199,7 +200,8 @@ export async function scrape(
     // Tier 1 has no browser handle, so select its identity up front and use the
     // same UA for both the outbound request and the public result.
     const tier1Fingerprint = FINGERPRINT_POOL[Math.floor(Math.random() * FINGERPRINT_POOL.length)] ?? FINGERPRINT
-    const t1 = await runTier1(
+    const tier1Runner = runners.tier1 ?? runTier1
+    const t1 = await tier1Runner(
       req.url,
       { ...sanitizedHeaders, "User-Agent": tier1Fingerprint.userAgent },
       req.method,
