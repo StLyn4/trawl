@@ -134,6 +134,7 @@ TRAWL and Redis.
 | `MITM_HOST`                      | `0.0.0.0`            | Proxy bind address                                                      |
 | `MITM_CA_DIR`                    | `/data/proxy-ca`     | Persistent root CA directory                                            |
 | `MITM_ALWAYS_SCRAPE`             | `false`              | Skip proxy Tier 0 and enter the scraper immediately                     |
+| `MITM_ESCALATE_429` | `false` | Try scraping after an unrecognized proxy HTTP 429 response |
 | `MCP_ENABLED`                    | `false`              | Enables the Streamable HTTP endpoint at `/mcp`                          |
 | `MCP_ALLOWED_ORIGINS`            | —                    | Comma-separated allowed browser origins                                 |
 
