@@ -122,6 +122,8 @@ export const MITM_MAX_TIER = isTier(configuredMaxTier) ? configuredMaxTier : und
 // Skip the proxy's direct Tier 0 probe and route ordinary HTTP requests into scrape().
 // This is separate from ScrapeRequest.skipHttp, which controls scraper Tier 1.
 export const MITM_ALWAYS_SCRAPE = /^(1|true|yes)$/i.test(process.env.MITM_ALWAYS_SCRAPE ?? "")
+// Opt in to scraping fallback for otherwise unrecognized HTTP 429 responses.
+export const MITM_ESCALATE_429 = /^(1|true|yes)$/i.test(process.env.MITM_ESCALATE_429 ?? "")
 // Log one line per proxied request (method, url, status, content-type, bytes). Off by
 // default — proxied clients can be chatty. Errors are always logged.
 export const MITM_DEBUG = /^(1|true|yes)$/i.test(process.env.MITM_DEBUG ?? "")
