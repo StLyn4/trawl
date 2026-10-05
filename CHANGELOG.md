@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Add opt-in `followMetaRefresh` to the native scrape API: HTTP forwarders escalate to browser tiers, which follow bounded meta refresh redirects using the document base URL and existing proxy, cookies, outbound policy and TLS checks. Browser navigation interruptions are handled within the same deadline; network error documents, failed navigation, loops and spent refresh budgets fail the attempt instead of returning forwarding content. Addresses the request in #184 and the gaps identified in #185.
 
+### Fixed
+
+- Serve browser-rendered HTML through the MITM proxy with a UTF-8 charset while preserving the original bytes and charset of Tier 1 HTML responses (#186).
+
 ## [1.7.0] - 2026-09-28
 
 ### Added
