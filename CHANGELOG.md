@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Avoid false Imperva challenge detection from documentation, cookie-name mentions, inactive markup, and ordinary CDN response headers; retain active resource frames, sensor bootstrap shells, and Imperva error response detection (#182).
+
 - Serve browser-rendered HTML through the MITM proxy with a UTF-8 charset while preserving the original bytes and charset of Tier 1 HTML responses (#186).
 
 ## [1.7.0] - 2026-09-28
