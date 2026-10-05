@@ -27,6 +27,7 @@ import {
 } from "../utils/detect"
 import { normalizeHtml } from "../utils/html"
 import { trackMainDocumentResponses } from "../utils/mainResponse"
+import { followMetaRefresh } from "../utils/metaRefresh"
 import { isHardNetworkFailure } from "../utils/network"
 import { installOutboundPolicy, type OutboundUrlValidator } from "../utils/outboundPolicy"
 import { isProxyTransportFailure, normalizeProxyError, proxyResponseFailure } from "../utils/proxyFailure"
@@ -114,6 +115,13 @@ export async function runTier4(
       return { tier: 4, status: "error", durationMs: Date.now() - start, reason: earlyProxyFailure }
     }
 
+    const refresh = capture.followMetaRefresh
+      ? await followMetaRefresh(page, maxTimeout - (Date.now() - start), validateOutboundUrl)
+      : undefined
+    if (refresh && refresh.status !== "ok") {
+      return { tier: 4, status: refresh.status, durationMs: Date.now() - start, reason: refresh.reason }
+    }
+
     const remaining = maxTimeout - (Date.now() - start)
     const peekHtml = await page.content().catch(() => "")
     const { challengeType, resolution } = await routeChallengeWait(
@@ -121,7 +129,7 @@ export async function runTier4(
       peekHtml,
       mainResponse.headers,
       remaining,
-      url,
+      refresh?.url ?? url,
       undefined,
       mainResponse.status,
       initialCookies,
