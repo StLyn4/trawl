@@ -73,6 +73,8 @@ Akamai configurations vary between properties and change over time. TRAWL treats
 
 Tier 3 and Tier 4 also detect and resolve supported Imperva/Incapsula WAF challenges. Imperva's `reese84` (current) / `___utmvc` (legacy) sensor cookies are produced by an obfuscated in-page JS challenge. TRAWL detects the response with `packages/tiers/src/utils/detect.ts` and waits for the sensor cookie through `packages/tiers/src/utils/impervaWait.ts`.
 
+Detection checks active challenge frames and sensor bootstrap shells. Cookie names in article text, inactive HTML examples, and ordinary Imperva CDN headers alone do not trigger browser escalation.
+
 **Caveat:** unlike Turnstile, Imperva's script sometimes layers in TLS/JA3 and behavioral checks beyond plain cookie generation, and its obfuscation changes periodically — success isn't guaranteed at the same rate as Cloudflare. Some Imperva deployments also show a visible interactive CAPTCHA widget (distinct from hCaptcha/reCAPTCHA) instead of the passive sensor-only path; that variant isn't solved yet.
 
 ### DataDome challenges
