@@ -5,6 +5,7 @@ import {
   MITM_CA_DIR,
   MITM_DEBUG,
   MITM_ENABLED,
+  MITM_ESCALATE_429,
   MITM_HOST,
   MITM_MAX_TIER,
   MITM_PORT,
@@ -39,6 +40,7 @@ if (MITM_ENABLED) {
     deps: getDeps(),
     maxTier: MITM_MAX_TIER,
     alwaysScrape: MITM_ALWAYS_SCRAPE,
+    escalate429: MITM_ESCALATE_429,
     debug: MITM_DEBUG,
   })
 }

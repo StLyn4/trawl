@@ -13,7 +13,13 @@ import { metrics } from "../metrics"
 import { runLoggedScrape } from "../requestLogging"
 import { MitmCa } from "./ca"
 import { ChallengeCache, type ChallengeMode } from "./challengeCache"
-import { directForwardHttp, directForwardHttps, type ForwardResult } from "./directForward"
+import {
+  directForwardHttp,
+  directForwardHttps,
+  type ForwardResult,
+  type ForwardResultBuffered,
+  type ForwardResultStream,
+} from "./directForward"
 import { writeResponse, writeResponseFromBuffer, writeResponseFromStream } from "./httpResponse"
 import { registerLocalProxy } from "./localTrust"
 import { responseFromBlockedEvidence, responseFromScrapeResult } from "./responsePolicy"
@@ -36,6 +42,7 @@ export interface MitmProxyOptions {
   maxTier?: 1 | 2 | 3 | 4
   maxTimeout?: number
   alwaysScrape?: boolean
+  escalate429?: boolean
   debug?: boolean
 }
 
@@ -372,6 +379,17 @@ async function proxyRequest(
     return await serveViaScrape(stream, url, method, clientHeaders, body, opts)
   }
 
+  if (opts.escalate429 && tier0.status === 429 && (tier0.mode === "stream" || !tier0.challengeDetected)) {
+    if (opts.debug) console.log(`[proxy] Tier 0 HTTP 429 for ${safeUrl(url)} -> optional scrape fallback`)
+    // Keep the original response for a failed solve. Rate limiting alone does not
+    // establish a persistent challenge on this host, so do not update its cache.
+    if (tier0.mode === "stream") {
+      tier0.socket.setTimeout(0)
+      stream.once("close", () => tier0.mode === "stream" && tier0.socket.destroy())
+    }
+    return await serveViaScrape(stream, url, method, clientHeaders, body, opts, tier0)
+  }
+
   if (tier0.mode === "stream") {
     if (opts.debug) console.log(`[proxy] Tier 0 stream for ${safeUrl(url)} -> ${tier0.status}`)
     challengeCache.set(domain, "direct")
@@ -417,6 +435,27 @@ function terminalBlockedEvidence(error: ScrapeError) {
   return evidence
 }
 
+function writeOriginalResponse(
+  stream: net.Socket,
+  response: ForwardResultBuffered | ForwardResultStream,
+  requestBodyLength: number,
+): void {
+  if (response.mode === "buffer") {
+    writeResponseFromBuffer(stream, response.status, response.headers, response.body, response.contentType)
+  } else {
+    writeResponseFromStream(
+      stream,
+      response.status,
+      response.headers,
+      response.socket,
+      response.contentType,
+      requestBodyLength,
+      response.prefix,
+    )
+    response.socket.resume()
+  }
+}
+
 export async function serveViaScrape(
   stream: net.Socket,
   url: string,
@@ -424,6 +463,7 @@ export async function serveViaScrape(
   clientHeaders: Record<string, string>,
   body: Buffer | undefined,
   opts: MitmProxyOptions,
+  rateLimitResponse?: ForwardResultBuffered | ForwardResultStream,
 ): Promise<void> {
   try {
     if (!isValidMethod(method)) {
@@ -444,6 +484,11 @@ export async function serveViaScrape(
       opts.deps,
       scrape,
     )
+    if (rateLimitResponse && scrapeResult.statusCode >= 400) {
+      writeOriginalResponse(stream, rateLimitResponse, body?.length ?? 0)
+      return
+    }
+    if (rateLimitResponse?.mode === "stream") rateLimitResponse.socket.destroy()
     if (opts.debug)
       console.log(
         `[proxy] scrape() tier ${scrapeResult.tier} for ${url} -> ${scrapeResult.statusCode} html=${scrapeResult.html?.length ?? 0}b body=${scrapeResult.body?.length ?? 0}b`,
@@ -472,6 +517,12 @@ export async function serveViaScrape(
       response.contentType,
     )
   } catch (err) {
+    if (rateLimitResponse) {
+      if (opts.debug)
+        console.log(`[proxy] HTTP 429 fallback failed for ${safeUrl(url)} -> preserving original response`)
+      writeOriginalResponse(stream, rateLimitResponse, body?.length ?? 0)
+      return
+    }
     const evidence = err instanceof ScrapeError ? terminalBlockedEvidence(err) : undefined
     if (evidence) {
       const response = responseFromBlockedEvidence(evidence)

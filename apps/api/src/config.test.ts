@@ -17,6 +17,7 @@ type ConfigSnapshot = {
   launchTimeoutMs: number
   port: number
   mitmPort: number
+  mitmEscalate429: boolean
 }
 
 const readConfig = (overrides: Record<string, string>): ConfigSnapshot => {
@@ -39,18 +40,26 @@ const readConfig = (overrides: Record<string, string>): ConfigSnapshot => {
       launchTimeoutMs: config.LAUNCH_TIMEOUT_MS,
       port: config.PORT,
       mitmPort: config.MITM_PORT,
+      mitmEscalate429: config.MITM_ESCALATE_429,
     }))
   `
   const result = Bun.spawnSync({
     cmd: [process.execPath, "-e", script],
     cwd: import.meta.dir,
-    env: { ...process.env, ...overrides },
+    env: { ...process.env, MITM_ESCALATE_429: "", ...overrides },
   })
   expect(result.exitCode).toBe(0)
   return JSON.parse(result.stdout.toString()) as ConfigSnapshot
 }
 
 describe("environment configuration", () => {
+  test.each(["", "false", "0", "invalid"])("keeps 429 escalation disabled for %s", (value) => {
+    expect(readConfig({ MITM_ESCALATE_429: value }).mitmEscalate429).toBe(false)
+  })
+  test.each(["true", "TRUE", "1", "yes"])("enables 429 escalation for %s", (value) => {
+    expect(readConfig({ MITM_ESCALATE_429: value }).mitmEscalate429).toBe(true)
+  })
+
   test("reads the renamed variables and trims REDIS_URL", () => {
     expect(
       readConfig({
@@ -88,6 +97,7 @@ describe("environment configuration", () => {
       launchTimeoutMs: 45000,
       port: 9000,
       mitmPort: 9001,
+      mitmEscalate429: false,
     })
   })
 
@@ -130,6 +140,7 @@ describe("environment configuration", () => {
       launchTimeoutMs: 90000,
       port: 8191,
       mitmPort: 8192,
+      mitmEscalate429: false,
     })
   })
 
