@@ -28,6 +28,7 @@ import {
 } from "../utils/detect"
 import { normalizeHtml } from "../utils/html"
 import { trackMainDocumentResponses } from "../utils/mainResponse"
+import { followMetaRefresh } from "../utils/metaRefresh"
 import { isHardNetworkFailure } from "../utils/network"
 import { installOutboundPolicy, type OutboundUrlValidator } from "../utils/outboundPolicy"
 import { isProxyTransportFailure, normalizeProxyError, proxyResponseFailure } from "../utils/proxyFailure"
@@ -139,6 +140,13 @@ export async function runTier3(
     }
     // Otherwise (navigation interrupted by CF redirect) — fall through and keep going
 
+    const refresh = capture.followMetaRefresh
+      ? await followMetaRefresh(page, maxTimeout - (Date.now() - start), validateOutboundUrl)
+      : undefined
+    if (refresh && refresh.status !== "ok") {
+      return { tier: 3, status: refresh.status, durationMs: Date.now() - start, reason: refresh.reason }
+    }
+
     const remaining = maxTimeout - (Date.now() - start)
     const peekHtml = await page.content().catch(() => "")
     const { challengeType, resolution } = await routeChallengeWait(
@@ -146,7 +154,7 @@ export async function runTier3(
       peekHtml,
       mainResponse.headers,
       remaining,
-      url,
+      refresh?.url ?? url,
       undefined,
       mainResponse.status,
       initialCookies,

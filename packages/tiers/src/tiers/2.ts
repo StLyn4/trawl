@@ -23,6 +23,7 @@ import {
 } from "../utils/detect"
 import { normalizeHtml } from "../utils/html"
 import { trackMainDocumentResponses } from "../utils/mainResponse"
+import { followMetaRefresh } from "../utils/metaRefresh"
 import { installOutboundPolicy, type OutboundUrlValidator } from "../utils/outboundPolicy"
 import { captureResponse, isHtmlContentType, isTextContentType } from "../utils/response"
 import type { RouteLike } from "../utils/sanitize"
@@ -97,7 +98,17 @@ export async function runTier2(
     const mainResponse = trackMainDocumentResponses(page, { redirectChain: capture.redirectChain })
 
     await page.goto(url, { waitUntil: "domcontentloaded", timeout: maxTimeout })
-    await page.waitForLoadState("networkidle", { timeout: 8_000 }).catch(() => {})
+    if (capture.followMetaRefresh) {
+      const refresh = await followMetaRefresh(page, maxTimeout - (Date.now() - start), validateOutboundUrl)
+      if (refresh.status !== "ok") {
+        return { tier: 2, status: refresh.status, durationMs: Date.now() - start, reason: refresh.reason }
+      }
+    }
+    await page
+      .waitForLoadState("networkidle", {
+        timeout: capture.followMetaRefresh ? Math.max(1, Math.min(8_000, maxTimeout - (Date.now() - start))) : 8_000,
+      })
+      .catch(() => {})
 
     const html = await page.content()
 

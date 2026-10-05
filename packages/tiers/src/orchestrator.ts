@@ -8,7 +8,9 @@ import { runTier3 } from "./tiers/3"
 import type { runTier4 } from "./tiers/4"
 import { createCrossedLandingGuard, type LandingProbe } from "./utils/crossedLanding"
 import { normalizeHtml } from "./utils/html"
+import { metaRefreshTarget } from "./utils/metaRefresh"
 import type { ProxyPool } from "./utils/proxyRotator"
+import { isHtmlContentType } from "./utils/response"
 import { requireContentTypeForBody, sanitizeHeaders } from "./utils/sanitize"
 
 // Bounds how many distinct proxies a single request will try per tier before giving up —
@@ -106,6 +108,7 @@ export async function scrape(
   // only via the thrown ScrapeError.
   let blockedEvidence: BlockedEvidence | undefined
   const capture = {
+    followMetaRefresh: req.followMetaRefresh,
     screenshotFullPage: req.screenshotFullPage,
     screenshotWaitForSelector: req.screenshotWaitForSelector,
     screenshotSelector: req.screenshotSelector,
@@ -209,6 +212,13 @@ export async function scrape(
       ignoreCertificateErrors,
       trustedProxyCa,
     )
+    if (req.followMetaRefresh && t1.status === "success" && t1.html && isHtmlContentType(t1.contentType)) {
+      const refresh = await metaRefreshTarget(t1.html, t1.effectiveUrl ?? req.url)
+      if (refresh) {
+        t1.status = "needs-js"
+        t1.reason = "meta-refresh-needs-browser"
+      }
+    }
     if (ignoreCertificateErrors) certificateError = t1.certificateError
     const crossed1 = hasUsablePayload(t1)
       ? await refuseCrossed(t1.effectiveUrl, tier1Fingerprint.userAgent, tier1Proxy)

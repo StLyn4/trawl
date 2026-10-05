@@ -71,6 +71,7 @@
       "dependencies": {
         "@trawl/browser": "workspace:*",
         "@trawl/types": "workspace:*",
+        "linkedom": "^0.18.13",
         "patchright": "^1.63.0",
       },
       "devDependencies": {
