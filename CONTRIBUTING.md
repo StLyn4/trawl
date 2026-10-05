@@ -50,6 +50,19 @@ bun run verify      # full release gate: check, types, tests, and builds
 
 CI runs `bun run verify` on every PR.
 
+### Browser integration tests
+
+Meta refresh integration tests use a real Camoufox browser with local HTTP fixtures,
+including a simulated cross-host challenge. They are skipped in the default test suite.
+Install the compatible browser version pinned in `apps/api/Dockerfile` (currently
+152.0.4-beta.30), then run:
+
+```bash
+TRAWL_BROWSER_TESTS=1 CAMOUFOX_INSTALL_DIR=/path/to/camoufox bun test packages/browser/tests/metaRefresh.integration.test.ts
+```
+
+`CAMOUFOX_INSTALL_DIR` must contain the extracted browser bundle and its `version.json`.
+
 ## Project layout
 
 This is a Bun monorepo with workspaces:
