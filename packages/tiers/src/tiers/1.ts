@@ -9,6 +9,7 @@ import {
   getDataDomeAction,
   hasAkamaiChallenge,
   hasAltcha,
+  hasAnubisChallenge,
   hasAwsWafCaptcha,
   hasAwsWafChallenge,
   hasDuckDuckGoChallenge,
@@ -211,6 +212,21 @@ export async function runTier1(
         durationMs: Date.now() - start,
         reason: "duckduckgo-anomaly-challenge",
         challenge: "duckduckgo",
+        responseHeaders,
+        contentType,
+        body: rawBytes,
+        statusCode: res.status,
+      }
+    }
+
+    if (hasAnubisChallenge(previewText)) {
+      return {
+        tier: 1,
+        certificateError,
+        status: "needs-js",
+        durationMs: Date.now() - start,
+        reason: "anubis-challenge",
+        challenge: "anubis",
         responseHeaders,
         contentType,
         body: rawBytes,

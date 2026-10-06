@@ -14,6 +14,7 @@ export {
   getDataDomeAction,
   hasAkamaiChallenge,
   hasAltcha,
+  hasAnubisChallenge,
   hasAwsWafCaptcha,
   hasAwsWafChallenge,
   hasChallengeWallMarkers,
