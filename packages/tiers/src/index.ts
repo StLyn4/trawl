@@ -32,6 +32,7 @@ export {
   isCloudflarePage,
   needsJs,
 } from "./utils/detect"
+export { isGoogleSorryUrl } from "./utils/googleSorry"
 export { normalizeProxy, ProxyPool, type ProxySelection } from "./utils/proxyRotator"
 export {
   isValidMethod,
