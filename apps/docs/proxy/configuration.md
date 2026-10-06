@@ -53,6 +53,12 @@ instead be buffered by the scraper, and request bodies pass through the scraper'
 request interface. Prefer a separate TRAWL instance or narrowly scoped proxy rule for affected
 sites.
 
+## Google Search challenge redirects
+
+Tier 0 recognizes HTTP 301, 302, 303, 307 and 308 redirects to `/sorry` or `/sorry/` on `google.com`, `www.google.com`, `ipv4.google.com` and `ipv6.google.com`. It enters the existing scraper ladder using the original request URL, without following the redirect in the direct forwarder. Absolute, protocol-relative and relative destinations are resolved against the request URL.
+
+Ordinary search redirects, login redirects and unrelated hosts remain direct responses. Tier 1 also escalates final responses on these challenge URLs; browser tiers report `google-sorry-persistent` when the final URL is still the challenge, rather than returning it as successful content. Existing tier limits, outbound validation and TLS checks still apply. This does not add a new CAPTCHA solver or guarantee that Google will accept the browser or its IP. Other Google country domains are not covered by this rule.
+
 ## Optional HTTP 429 escalation
 
 Set `MITM_ESCALATE_429=true` to treat otherwise unrecognized HTTP 429 responses from proxy Tier 0 as blocked and try the existing scraper ladder. The flag is off by default, applies to HTTP and HTTPS proxy traffic, and does not change the native API, which already treats 429 as blocked. Recognized challenges retain their existing handling.

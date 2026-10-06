@@ -153,6 +153,8 @@ interface TierResult {
 A scrape that runs a browser but never clears the challenge is still a failure: it answers
 **500**, and `ScrapeResult` never carries a challenge wall dressed up as content.
 
+Google Search's `/sorry` and `/sorry/` URLs on `google.com`, `www.google.com`, `ipv4.google.com` and `ipv6.google.com` are recognized as challenge destinations. Tier 1 reports `google-sorry-challenge` and escalates; browser tiers report `google-sorry-persistent` if the final URL remains there after the existing solver attempts. This does not guarantee a successful Google CAPTCHA solve.
+
 `blockedEvidence: true` attaches the wall to that failure instead, so a caller can tell
 "blocked by a challenge" from "TRAWL broke" and can keep the page as evidence:
 
