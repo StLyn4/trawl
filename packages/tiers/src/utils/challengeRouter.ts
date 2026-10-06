@@ -1,5 +1,6 @@
 import type { Page } from "patchright"
 import { waitForAkamaiResolution } from "./akamaiWait"
+import { waitForAnubisResolution } from "./anubisWait"
 import { type AwsWafResolution, waitForAwsWafResolution } from "./awsWafWait"
 import { waitForChallengeResolution } from "./challengeWait"
 import type { ChallengeCookieSnapshot } from "./cookies"
@@ -67,6 +68,11 @@ export async function routeChallengeWait(
   // page content, not interstitial walls, so never send them through a WAF waiter.
   if (challengeType === "altcha" || challengeType === "friendly-captcha") {
     return { challengeType, resolution: "ok" }
+  }
+  // Anubis resolves itself in the browser (PoW or metarefresh, then re-navigation) and
+  // has no interactive widget.
+  if (challengeType === "anubis") {
+    return { challengeType, resolution: await waitForAnubisResolution(page, timeoutMs) }
   }
   // Neither the DataDome slider nor its hard block resolves by waiting, so they never reach
   // a waiter: report them straight away and let the tier escalate.

@@ -17,6 +17,7 @@ import { routeChallengeWait } from "../utils/challengeRouter"
 import { snapshotChallengeCookies, toCookies } from "../utils/cookies"
 import {
   hasAkamaiChallenge,
+  hasAnubisChallenge,
   hasDataDomeChallenge,
   hasDdosGuardChallenge,
   hasDuckDuckGoChallenge,
@@ -348,6 +349,31 @@ export async function runTier4(
         status: "blocked",
         durationMs: Date.now() - start,
         reason: "duckduckgo-persistent",
+      }
+    }
+
+    if (hasAnubisChallenge(html)) {
+      const pageTitle = await page.title().catch(() => "?")
+      const pageUrl = page.url()
+      console.log(`[tier4] anubis-persistent: url="${pageUrl}" title="${pageTitle}" html=${html.length}b`)
+      await reportBlocked(
+        page,
+        capture.blockedEvidence,
+        {
+          tier: 4,
+          status: "blocked",
+          reason: "anubis-persistent",
+          statusCode: mainResponse.status,
+          html,
+          screenshot: shot,
+        },
+        maxTimeout - (Date.now() - start),
+      )
+      return {
+        tier: 4,
+        status: "blocked",
+        durationMs: Date.now() - start,
+        reason: "anubis-persistent",
       }
     }
 
