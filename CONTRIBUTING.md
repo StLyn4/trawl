@@ -63,6 +63,15 @@ TRAWL_BROWSER_TESTS=1 CAMOUFOX_INSTALL_DIR=/path/to/camoufox bun test packages/b
 
 `CAMOUFOX_INSTALL_DIR` must contain the extracted browser bundle and its `version.json`.
 
+Raw text browser integration tests use owned HTTP fixtures and a local forward proxy:
+
+```bash
+TRAWL_RAW_TEXT_TESTS=1 CAMOUFOX_INSTALL_DIR=/path/to/camoufox bun test packages/browser/tests/rawText.integration.test.ts
+```
+
+They check TXT, JSON, XML, whitespace, empty files and declared charsets in browser
+tiers, plus rejection of empty HTML and HTTP blocks.
+
 ## Project layout
 
 This is a Bun monorepo with workspaces:

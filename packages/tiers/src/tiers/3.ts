@@ -29,13 +29,12 @@ import {
   isCloudflarePage,
 } from "../utils/detect"
 import { isGoogleSorryUrl } from "../utils/googleSorry"
-import { normalizeHtml } from "../utils/html"
 import { trackMainDocumentResponses } from "../utils/mainResponse"
 import { followMetaRefresh } from "../utils/metaRefresh"
 import { isHardNetworkFailure } from "../utils/network"
 import { installOutboundPolicy, type OutboundUrlValidator } from "../utils/outboundPolicy"
 import { isProxyTransportFailure, normalizeProxyError, proxyResponseFailure } from "../utils/proxyFailure"
-import { captureResponse, isHtmlContentType, isTextContentType } from "../utils/response"
+import { browserDocumentHtml, captureResponse, isHtmlContentType, isNonHtmlTextContentType } from "../utils/response"
 import type { RouteLike } from "../utils/sanitize"
 import { routeContinueOverrides } from "../utils/sanitize"
 import { waitForVisibleSelector } from "../utils/waitForVisibleSelector"
@@ -266,7 +265,11 @@ export async function runTier3(
     }
 
     // Empty shell means the browser got nothing — treat as a load failure
-    if (html.length < 100 && challengeType !== "anubis") {
+    if (
+      html.length < 100 &&
+      challengeType !== "anubis" &&
+      !isNonHtmlTextContentType(mainResponse.headers["content-type"])
+    ) {
       const errMsg = gotoErr instanceof Error ? gotoErr.message.split("\n")[0] : "page returned empty content"
       return { tier: 3, status: "error", durationMs: Date.now() - start, reason: errMsg }
     }
@@ -441,7 +444,7 @@ export async function runTier3(
       status: "success",
       durationMs: Date.now() - start,
       effectiveUrl: page.url(),
-      html: !captured.contentType || isTextContentType(captured.contentType) ? normalizeHtml(html) : "",
+      html: browserDocumentHtml(captured.contentType, html, captured.body),
       ...captured,
       cookies,
       userAgent: await page.evaluate(() => navigator.userAgent).catch(() => FINGERPRINT.userAgent),
