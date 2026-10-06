@@ -279,8 +279,6 @@ export class BrowserPool {
       // maps this to firefoxUserPrefs). The earlier `prefs` key was silently
       // ignored, so these settings were dead code in 1.0.0.
       firefox_user_prefs: {
-        // Never bypass a configured proxy when it is unavailable.
-        ...PROXY_SAFETY_FIREFOX_PREFS,
         "dom.ipc.processCount": this.contentProcesses,
         "dom.ipc.processPrelaunch": false,
         "dom.ipc.contentProcessCount": this.contentProcesses,
@@ -319,8 +317,9 @@ export class BrowserPool {
         "extensions.screenshots.background.enabled": false,
         "browser.sessionstore.max_tabs_undo": 0,
 
-        // USER_PREFS loads last so it can override any built-in above.
         ...this.userPrefs,
+        // Keep proxied traffic fail-closed and SOCKS DNS on the proxy.
+        ...PROXY_SAFETY_FIREFOX_PREFS,
       },
     })
 

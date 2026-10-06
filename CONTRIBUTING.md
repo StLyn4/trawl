@@ -72,6 +72,15 @@ TRAWL_RAW_TEXT_TESTS=1 CAMOUFOX_INSTALL_DIR=/path/to/camoufox bun test packages/
 They check TXT, JSON, XML, whitespace, empty files and declared charsets in browser
 tiers, plus rejection of empty HTML and HTTP blocks.
 
+Firefox preference integration tests cover both headless and virtual-display pools:
+
+```bash
+TRAWL_USER_PREFS_TESTS=1 CAMOUFOX_INSTALL_DIR=/path/to/camoufox bun test packages/browser/tests/userPrefs.integration.test.ts
+```
+
+They use owned HTTP fixtures and local DNS mapping to check JavaScript preferences
+and `.onion` blocking without requiring access to Tor.
+
 ## Project layout
 
 This is a Bun monorepo with workspaces:

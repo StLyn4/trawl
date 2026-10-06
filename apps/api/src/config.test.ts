@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test"
 
 type ConfigSnapshot = {
+  userPrefs: Record<string, string | number | boolean>
   redisUrl: string | null
   sessionCacheDriver: string
   redisSessionTtlSeconds: number
@@ -26,6 +27,7 @@ const readConfig = (overrides: Record<string, string>): ConfigSnapshot => {
     const config = await import("./config.ts")
     console.log(JSON.stringify({
       redisUrl: config.REDIS_URL ?? null,
+      userPrefs: config.USER_PREFS,
       sessionCacheDriver: config.SESSION_CACHE_DRIVER,
       redisSessionTtlSeconds: config.REDIS_SESSION_TTL_SECONDS,
       memorySessionCacheMaxEntries: config.MEMORY_SESSION_CACHE_MAX_ENTRIES,
@@ -48,7 +50,7 @@ const readConfig = (overrides: Record<string, string>): ConfigSnapshot => {
   const result = Bun.spawnSync({
     cmd: [process.execPath, "-e", script],
     cwd: import.meta.dir,
-    env: { ...process.env, MITM_ESCALATE_429: "", BROWSER_HARDWARE_CONCURRENCY: "", ...overrides },
+    env: { ...process.env, MITM_ESCALATE_429: "", BROWSER_HARDWARE_CONCURRENCY: "", USER_PREFS: "", ...overrides },
   })
   expect(result.exitCode).toBe(0)
   return JSON.parse(result.stdout.toString()) as ConfigSnapshot
@@ -83,6 +85,7 @@ describe("environment configuration", () => {
         MITM_PORT: "9001",
       }),
     ).toEqual({
+      userPrefs: {},
       redisUrl: "redis://cache.test:6379/2",
       sessionCacheDriver: "memory",
       redisSessionTtlSeconds: 7200,
@@ -127,6 +130,7 @@ describe("environment configuration", () => {
         MITM_PORT: "0",
       }),
     ).toEqual({
+      userPrefs: {},
       redisUrl: null,
       sessionCacheDriver: "redis",
       redisSessionTtlSeconds: 3600,
@@ -203,4 +207,44 @@ test("browser worker sizing is optional and rejects invalid values", async () =>
   for (const value of ["0", "-1", "1.5", "65", "NaN", "Infinity"]) {
     expect(() => parseBrowserHardwareConcurrency(value)).toThrow("BROWSER_HARDWARE_CONCURRENCY")
   }
+})
+
+describe("Firefox user preferences", () => {
+  test.each(["", "  ", "{}"])("keeps preferences empty for %s", (value) => {
+    expect(readConfig({ USER_PREFS: value }).userPrefs).toEqual({})
+  })
+
+  test("accepts Firefox preference values without changing them", () => {
+    const prefs = {
+      "network.dns.blockDotOnion": false,
+      "test.string": "value",
+      "test.empty": "",
+      "test.integer": 7,
+      "test.min": -2147483648,
+      "test.max": 2147483647,
+    }
+    expect(readConfig({ USER_PREFS: JSON.stringify(prefs) }).userPrefs).toEqual(prefs)
+  })
+
+  test.each([
+    "{",
+    "null",
+    "[]",
+    "true",
+    '{"bad":null}',
+    '{"bad":[]}',
+    '{"bad":{}}',
+    '{"bad":0.5}',
+    '{"bad":2147483648}',
+    '{"bad":-2147483649}',
+    '{"bad":1e400}',
+  ])("rejects unsupported USER_PREFS %s at startup", (value) => {
+    const result = Bun.spawnSync({
+      cmd: [process.execPath, "-e", 'await import("./config.ts")'],
+      cwd: import.meta.dir,
+      env: { ...process.env, USER_PREFS: value },
+    })
+    expect(result.exitCode).not.toBe(0)
+    expect(result.stderr.toString()).toContain("USER_PREFS")
+  })
 })

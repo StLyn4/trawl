@@ -602,3 +602,44 @@ describe("BrowserPool wedge recovery", () => {
     await pool.shutdown()
   })
 })
+
+describe("Firefox launch preferences", () => {
+  test.each([false, true])("passes custom prefs and enforces proxy safety for virtualDisplay=%s", (virtualDisplay) => {
+    const script = `
+      import { mock } from "bun:test"
+      let options
+      mock.module("camoufox-js", () => ({ Camoufox: async (input) => {
+        options = input
+        return {
+          newContext: async () => ({ pages: () => [], addInitScript: async () => {}, close: async () => {} }),
+          isConnected: () => true,
+          close: async () => {},
+        }
+      }}))
+      const { BrowserPool } = await import("../src/pool.ts")
+      const pool = new BrowserPool({ poolSize: 1, virtualDisplay: ${virtualDisplay}, userPrefs: {
+        "network.dns.blockDotOnion": false,
+        "network.proxy.failover_direct": true,
+        "network.proxy.socks_remote_dns": false,
+        "test.string": "value",
+        "test.integer": 7,
+      }})
+      try {
+        await pool.init()
+        console.log(JSON.stringify({ headless: options.headless, prefs: options.firefox_user_prefs }))
+      } finally { await pool.shutdown() }
+    `
+    const result = Bun.spawnSync({ cmd: [process.execPath, "-e", script], cwd: import.meta.dir })
+    expect(result.exitCode, result.stderr.toString()).toBe(0)
+    const options = JSON.parse(result.stdout.toString().trim().split("\n").at(-1) ?? "")
+    expect(options.headless).toBe(virtualDisplay ? "virtual" : true)
+    expect(options.prefs).toMatchObject({
+      "network.dns.blockDotOnion": false,
+      "network.proxy.failover_direct": false,
+      "network.proxy.socks_remote_dns": true,
+      "test.string": "value",
+      "test.integer": 7,
+      "dom.ipc.processCount": 2,
+    })
+  })
+})

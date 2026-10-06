@@ -74,9 +74,19 @@ export const SCRAPE_PROXY_SELECTION = parseProxySelection(process.env.SCRAPE_PRO
 // Optional extra Firefox prefs. Invalid values fail startup.
 const parseUserPrefs = (value: string | undefined): Record<string, string | number | boolean> => {
   if (!value?.trim()) return {}
-  const prefs: unknown = JSON.parse(value)
+  let prefs: unknown
+  try {
+    prefs = JSON.parse(value)
+  } catch {
+    throw new Error("USER_PREFS must contain valid JSON")
+  }
   if (prefs === null || typeof prefs !== "object" || Array.isArray(prefs)) {
     throw new Error("USER_PREFS must be a JSON object of pref name to value")
+  }
+  for (const pref of Object.values(prefs)) {
+    if (typeof pref === "string" || typeof pref === "boolean") continue
+    if (typeof pref === "number" && Number.isInteger(pref) && pref >= -2147483648 && pref <= 2147483647) continue
+    throw new Error("USER_PREFS values must be strings, booleans or signed 32-bit integers")
   }
   return prefs as Record<string, string | number | boolean>
 }

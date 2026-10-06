@@ -151,9 +151,19 @@ Set `MITM_ALWAYS_SCRAPE=true` as well when the proxy's direct Tier 0 probe must 
 **Default:** _(unset)_
 
 A JSON object of Firefox prefs applied to every launched browser, merged after TRAWL's built-in
-launch prefs so entries can override them. This exposes browser-level behavior the API has no flag for.
-Prefs apply at browser launch, so restart TRAWL after changing them. An invalid value stops TRAWL
-at startup.
+launch prefs. Values must be strings, booleans or signed 32-bit integers; arrays, objects,
+`null` and fractional numbers are rejected at startup. Prefs apply at browser launch,
+so restart TRAWL after changing them.
+
+For a deployment that already routes `.onion` traffic through Tor and supplies DNS:
+
+```ini
+USER_PREFS={"network.dns.blockDotOnion":false}
+```
+
+`network.proxy.failover_direct=false` and `network.proxy.socks_remote_dns=true` remain
+enforced even if supplied in `USER_PREFS`. Other preferences can override built-in
+values, including process counts, so configure them with your resource limits in mind.
 
 ## Browser Pool
 

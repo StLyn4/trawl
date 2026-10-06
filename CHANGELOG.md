@@ -15,8 +15,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Add opt-in `USER_PREFS` (JSON object) applied to every launched browser's Firefox prefs.
 - Detect Anubis (TecharoHQ) proof-of-work and metarefresh interstitials, which are served at HTTP 200 and were previously returned to callers as successful Tier 1 content. Escalate them to the browser tiers, whose JS resolves the challenge by itself; a wall that persists after waiting reports `anubis-persistent` (#189).
+- Add opt-in `USER_PREFS` for Firefox launch preferences, including `network.dns.blockDotOnion` for existing Tor deployments. Validate preference values at startup, forward the setting through Docker Compose and retain proxy fail-closed and remote SOCKS DNS settings (#202).
 
 - Add opt-in `MITM_ESCALATE_429` for proxy HTTP 429 responses. Keep the default pass-through behavior, avoid caching plain rate limits as host-wide challenges, and preserve the original response when scraping fails (#181).
 
