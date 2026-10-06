@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Detect Anubis (TecharoHQ) proof-of-work and metarefresh interstitials, which are served at HTTP 200 and were previously returned to callers as successful Tier 1 content. Escalate them to the browser tiers, whose JS resolves the challenge by itself; a wall that persists after waiting reports `anubis-persistent` (#189).
+- Detect Anubis challenges and HTTP 200 denial pages, including challenges beyond the inspection preview. Wait for browser-executed proof of work within the remaining tier budget, recover stale sessions through a fresh context, accept short destinations and reject verification errors or persistent walls. Recover once from a closed Anubis browser page for safe requests, and avoid duplicate verification when meta-refresh following is enabled. Return error HTTP statuses for unresolved Anubis proxy responses (#189).
 
 - Add opt-in `MITM_ESCALATE_429` for proxy HTTP 429 responses. Keep the default pass-through behavior, avoid caching plain rate limits as host-wide challenges, and preserve the original response when scraping fails (#181).
 

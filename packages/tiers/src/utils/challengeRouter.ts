@@ -1,5 +1,6 @@
 import type { Page } from "patchright"
 import { waitForAkamaiResolution } from "./akamaiWait"
+import { detectAnubisPage } from "./anubis"
 import { waitForAnubisResolution } from "./anubisWait"
 import { type AwsWafResolution, waitForAwsWafResolution } from "./awsWafWait"
 import { waitForChallengeResolution } from "./challengeWait"
@@ -9,10 +10,11 @@ import { waitForDdosGuardResolution } from "./ddosGuardWait"
 import { type ChallengeType, detectChallengeType, getAwsWafAction, getDataDomeAction, hasAwsWafCaptcha } from "./detect"
 import { waitForImpervaResolution } from "./impervaWait"
 
-type Resolution = AwsWafResolution | DataDomeResolution
+type Resolution = AwsWafResolution | DataDomeResolution | "blocked" | "browser-closed"
 type Waiter = (page: Page, timeoutMs: number, originalUrl?: string) => Promise<Resolution>
 
 interface ChallengeWaiters {
+  anubis?: typeof waitForAnubisResolution
   cloudflare: (
     page: Page,
     timeoutMs: number,
@@ -37,6 +39,7 @@ interface ChallengeWaiters {
 }
 
 const defaultWaiters: ChallengeWaiters = {
+  anubis: waitForAnubisResolution,
   cloudflare: waitForChallengeResolution,
   imperva: waitForImpervaResolution,
   akamai: waitForAkamaiResolution,
@@ -56,8 +59,18 @@ export async function routeChallengeWait(
   waiters: ChallengeWaiters = defaultWaiters,
   status?: number,
   initialCookies?: ChallengeCookieSnapshot,
+  response?: () => { status: number; url?: string },
 ): Promise<{ challengeType: ChallengeType; resolution: Resolution }> {
   const challengeType = detectChallengeType(html, headers, status)
+  if (challengeType === "anubis") {
+    return {
+      challengeType,
+      resolution:
+        detectAnubisPage(html) === "blocked"
+          ? "blocked"
+          : await (waiters.anubis ?? waitForAnubisResolution)(page, timeoutMs, originalUrl, { response }),
+    }
+  }
   if (getAwsWafAction(status, headers) === "captcha" || hasAwsWafCaptcha(html)) {
     return { challengeType: "aws-waf", resolution: "captcha-required" }
   }
@@ -68,11 +81,6 @@ export async function routeChallengeWait(
   // page content, not interstitial walls, so never send them through a WAF waiter.
   if (challengeType === "altcha" || challengeType === "friendly-captcha") {
     return { challengeType, resolution: "ok" }
-  }
-  // Anubis resolves itself in the browser (PoW or metarefresh, then re-navigation) and
-  // has no interactive widget.
-  if (challengeType === "anubis") {
-    return { challengeType, resolution: await waitForAnubisResolution(page, timeoutMs) }
   }
   // Neither the DataDome slider nor its hard block resolves by waiting, so they never reach
   // a waiter: report them straight away and let the tier escalate.
