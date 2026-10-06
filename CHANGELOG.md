@@ -29,6 +29,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Serve browser-rendered HTML through the MITM proxy with a UTF-8 charset while preserving the original bytes and charset of Tier 1 HTML responses (#186).
 
+- Send the Firefox navigation header set (`Accept`, zstd `Accept-Encoding`, `Upgrade-Insecure-Requests`, `Sec-Fetch-Dest/Mode/Site/User`, `Priority`) from Tier 1, matching what the Camoufox browser tiers present, and drop the extra `Cache-Control`/`Pragma` so plain HTTP requests no longer diverge from browser requests on header fingerprints (#190).
+
 ## [1.7.0] - 2026-09-28
 
 ### Added

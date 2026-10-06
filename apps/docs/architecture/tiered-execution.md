@@ -28,13 +28,19 @@ Tier 4: Residential Proxy ─── success ──→ cache cookies, return (15�
 
 ## Tier 1 — Plain HTTP Fetch
 
-The cheapest tier. Uses Bun's native `fetch()` with a realistic browser header set:
+The cheapest tier. Uses Bun's native `fetch()` with the same Firefox navigation header set the Camoufox browser tiers send:
 
 ```
-User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/131...
-Accept: text/html,application/xhtml+xml,...
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:152.0) Gecko/20100101 Firefox/152.0
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
 Accept-Language: en-US,en;q=0.9
-Accept-Encoding: gzip, deflate, br
+Accept-Encoding: gzip, deflate, br, zstd
+Upgrade-Insecure-Requests: 1
+Sec-Fetch-Dest: document
+Sec-Fetch-Mode: navigate
+Sec-Fetch-Site: none
+Sec-Fetch-User: ?1
+Priority: u=0, i
 ```
 
 **Succeeds for:** sites that serve the requested content without a browser challenge.
