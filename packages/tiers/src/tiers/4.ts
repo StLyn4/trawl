@@ -33,7 +33,7 @@ import { followMetaRefresh } from "../utils/metaRefresh"
 import { isHardNetworkFailure } from "../utils/network"
 import { installOutboundPolicy, type OutboundUrlValidator } from "../utils/outboundPolicy"
 import { isProxyTransportFailure, normalizeProxyError, proxyResponseFailure } from "../utils/proxyFailure"
-import { browserDocumentHtml, captureResponse, isHtmlContentType } from "../utils/response"
+import { browserDocumentHtml, captureResponse, isHtmlContentType, isNonHtmlTextContentType } from "../utils/response"
 import type { RouteLike } from "../utils/sanitize"
 import { routeContinueOverrides } from "../utils/sanitize"
 import { waitForVisibleSelector } from "../utils/waitForVisibleSelector"
@@ -236,7 +236,11 @@ export async function runTier4(
       return { tier: 4, status: "blocked", durationMs: Date.now() - start, reason }
     }
 
-    if (html.length < 100 && challengeType !== "anubis") {
+    if (
+      html.length < 100 &&
+      challengeType !== "anubis" &&
+      !isNonHtmlTextContentType(mainResponse.headers["content-type"])
+    ) {
       return { tier: 4, status: "error", durationMs: Date.now() - start, reason: "page returned empty content" }
     }
 

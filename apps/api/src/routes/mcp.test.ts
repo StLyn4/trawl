@@ -134,7 +134,7 @@ describe("MCP route", () => {
   })
 
   test("passes plain-text documents through untouched instead of readability-parsing them", async () => {
-    const source = 'const settings = a_b\nif (value < 3 && value > 1) log("<done>")'
+    const source = '  const settings = a_b\r\n\r\n\r\nif (value < 3 && value > 1) log("<done>")  \n'
     const app = mcpRoute({
       poolReady: () => true,
       runScrape: async () => ({ ...baseResult, html: source, contentType: "text/plain; charset=utf-8" }),
@@ -151,6 +151,37 @@ describe("MCP route", () => {
       characters: source.length,
       truncated: false,
     })
+  })
+
+  test.each(["markdown", "text"])("preserves empty text documents in %s format", async (format) => {
+    const app = mcpRoute({
+      poolReady: () => true,
+      runScrape: async () => ({ ...baseResult, html: "", contentType: "text/plain" }),
+    })
+    const response = await app.handle(
+      rpc("tools/call", { name: "read", arguments: { url: "https://1.1.1.1/empty.txt", format } }),
+    )
+    const result = (await response.json()).result
+    expect(result.isError).toBeUndefined()
+    expect(result.content[0].text).toBe("")
+    expect(result.structuredContent).toMatchObject({ format, characters: 0, truncated: false })
+  })
+
+  test("applies the character limit to raw text without stripping whitespace", async () => {
+    const source = "  alpha\r\n\r\nbeta  "
+    const app = mcpRoute({
+      poolReady: () => true,
+      runScrape: async () => ({ ...baseResult, html: source, contentType: "text/plain" }),
+    })
+    const response = await app.handle(
+      rpc("tools/call", {
+        name: "read",
+        arguments: { url: "https://1.1.1.1/raw.txt", format: "text", maxCharacters: 10 },
+      }),
+    )
+    const result = (await response.json()).result
+    expect(result.content[0].text).toBe(source.slice(0, 10))
+    expect(result.structuredContent).toMatchObject({ characters: 10, truncated: true })
   })
 
   test("returns screenshots as MCP image content and forces a browser tier", async () => {

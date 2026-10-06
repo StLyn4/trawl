@@ -40,6 +40,30 @@ describe("browserDocumentHtml", () => {
     expect(browserDocumentHtml("text/plain", viewerShell("shell only"))).toBe(viewerShell("shell only"))
   })
 
+  test("preserves whitespace in non-HTML text", () => {
+    const raw = "  alpha\r\n\r\n\r\nbeta  \n"
+    expect(browserDocumentHtml("text/plain; charset=utf-8", viewerShell(raw), Buffer.from(raw))).toBe(raw)
+  })
+
+  test("returns an empty captured text document instead of the viewer", () => {
+    expect(browserDocumentHtml("text/plain", viewerShell(""), new Uint8Array())).toBe("")
+  })
+
+  test.each(["iso-8859-1", '"windows-1252"', "'windows-1252'"])("decodes the declared charset %s", (charset) => {
+    expect(
+      browserDocumentHtml(`text/plain; charset=${charset}`, viewerShell("café"), Buffer.from([99, 97, 102, 233])),
+    ).toBe("café")
+  })
+
+  test("decodes UTF-16 text without changing whitespace", () => {
+    const raw = "  café\r\n"
+    expect(browserDocumentHtml("text/plain; charset=utf-16le", viewerShell(raw), Buffer.from(raw, "utf16le"))).toBe(raw)
+  })
+
+  test("falls back to UTF-8 for an unsupported charset", () => {
+    expect(browserDocumentHtml("text/plain; charset=unknown", viewerShell("café"), Buffer.from("café"))).toBe("café")
+  })
+
   test("returns nothing for binary content", () => {
     expect(browserDocumentHtml("image/png", viewerShell("binary"), Buffer.from([1, 2, 3]))).toBe("")
   })

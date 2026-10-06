@@ -24,7 +24,7 @@ import { isGoogleSorryUrl } from "../utils/googleSorry"
 import { normalizeHtml } from "../utils/html"
 import type { OutboundUrlValidator } from "../utils/outboundPolicy"
 import { normalizeProxyError, proxyResponseFailure } from "../utils/proxyFailure"
-import { isTextContentType } from "../utils/response"
+import { decodeTextBody, isHtmlContentType, isTextContentType } from "../utils/response"
 
 export interface Tier1Result extends TierResult {
   tier: 1
@@ -423,11 +423,13 @@ export async function runTier1(
       // challenge detection and must not be used as the response body — decode the
       // full buffer, reusing the preview only when it already covers the whole body.
       html: isTextContentType(contentType)
-        ? normalizeHtml(
-            decodedBytes.length > previewLen
-              ? new TextDecoder("utf-8", { fatal: false }).decode(decodedBytes)
-              : previewText,
-          )
+        ? isHtmlContentType(contentType)
+          ? normalizeHtml(
+              decodedBytes.length > previewLen
+                ? new TextDecoder("utf-8", { fatal: false }).decode(decodedBytes)
+                : previewText,
+            )
+          : decodeTextBody(decodedBytes, contentType)
         : "",
       body: rawBytes,
       responseHeaders,
