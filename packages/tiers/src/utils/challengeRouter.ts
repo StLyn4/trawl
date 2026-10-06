@@ -1,6 +1,6 @@
 import type { Page } from "patchright"
 import { waitForAkamaiResolution } from "./akamaiWait"
-import { waitForAnubisResolution } from "./anubisWait"
+import { type AnubisResolution, waitForAnubisResolution } from "./anubisWait"
 import { type AwsWafResolution, waitForAwsWafResolution } from "./awsWafWait"
 import { waitForChallengeResolution } from "./challengeWait"
 import type { ChallengeCookieSnapshot } from "./cookies"
@@ -9,7 +9,7 @@ import { waitForDdosGuardResolution } from "./ddosGuardWait"
 import { type ChallengeType, detectChallengeType, getAwsWafAction, getDataDomeAction, hasAwsWafCaptcha } from "./detect"
 import { waitForImpervaResolution } from "./impervaWait"
 
-type Resolution = AwsWafResolution | DataDomeResolution
+type Resolution = AwsWafResolution | DataDomeResolution | AnubisResolution
 type Waiter = (page: Page, timeoutMs: number, originalUrl?: string) => Promise<Resolution>
 
 interface ChallengeWaiters {

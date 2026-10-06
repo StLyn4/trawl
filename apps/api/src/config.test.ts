@@ -7,6 +7,7 @@ type ConfigSnapshot = {
   memorySessionCacheMaxEntries: number
   poolSize: number
   maxContentProcesses: number
+  hardwareConcurrency: number | null
   acquireTimeoutMs: number
   recycleAfterContexts: number
   headfulPoolSize: number
@@ -30,6 +31,7 @@ const readConfig = (overrides: Record<string, string>): ConfigSnapshot => {
       memorySessionCacheMaxEntries: config.MEMORY_SESSION_CACHE_MAX_ENTRIES,
       poolSize: config.POOL_SIZE,
       maxContentProcesses: config.BROWSER_MAX_CONTENT_PROCESSES,
+      hardwareConcurrency: config.BROWSER_HARDWARE_CONCURRENCY ?? null,
       acquireTimeoutMs: config.ACQUIRE_TIMEOUT_MS,
       recycleAfterContexts: config.RECYCLE_AFTER_TEMPORARY_CONTEXTS,
       headfulPoolSize: config.HEADFUL_POOL_SIZE,
@@ -46,7 +48,7 @@ const readConfig = (overrides: Record<string, string>): ConfigSnapshot => {
   const result = Bun.spawnSync({
     cmd: [process.execPath, "-e", script],
     cwd: import.meta.dir,
-    env: { ...process.env, MITM_ESCALATE_429: "", ...overrides },
+    env: { ...process.env, MITM_ESCALATE_429: "", BROWSER_HARDWARE_CONCURRENCY: "", ...overrides },
   })
   expect(result.exitCode).toBe(0)
   return JSON.parse(result.stdout.toString()) as ConfigSnapshot
@@ -87,6 +89,7 @@ describe("environment configuration", () => {
       memorySessionCacheMaxEntries: 250,
       poolSize: 4,
       maxContentProcesses: 3,
+      hardwareConcurrency: null,
       acquireTimeoutMs: 12000,
       recycleAfterContexts: 0,
       headfulPoolSize: 2,
@@ -130,6 +133,7 @@ describe("environment configuration", () => {
       memorySessionCacheMaxEntries: 1000,
       poolSize: 1,
       maxContentProcesses: 2,
+      hardwareConcurrency: null,
       acquireTimeoutMs: 15000,
       recycleAfterContexts: 8,
       headfulPoolSize: 0,
@@ -189,4 +193,14 @@ describe("environment configuration", () => {
     expect(result.exitCode).not.toBe(0)
     expect(result.stderr.toString()).toContain("METRICS_DASHBOARD_TOKEN must be at least 32 characters")
   })
+})
+
+test("browser worker sizing is optional and rejects invalid values", async () => {
+  const { parseBrowserHardwareConcurrency } = await import("./config")
+  expect(parseBrowserHardwareConcurrency(undefined)).toBeUndefined()
+  expect(parseBrowserHardwareConcurrency(" ")).toBeUndefined()
+  expect(readConfig({ BROWSER_HARDWARE_CONCURRENCY: "4" }).hardwareConcurrency).toBe(4)
+  for (const value of ["0", "-1", "1.5", "65", "NaN", "Infinity"]) {
+    expect(() => parseBrowserHardwareConcurrency(value)).toThrow("BROWSER_HARDWARE_CONCURRENCY")
+  }
 })

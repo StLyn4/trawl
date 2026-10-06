@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test"
+import { parseHTML } from "linkedom"
 import type { Page } from "patchright"
 import { runTier1 } from "../src/tiers/1"
 import { waitForAnubisResolution } from "../src/utils/anubisWait"
@@ -67,7 +68,10 @@ describe("Anubis PoW challenge detection", () => {
     }
     const clearedPage = {
       content: async () => "<html><body>real content</body></html>",
-      waitForLoadState: async () => {},
+      evaluate: async (read: (document: Document) => unknown) =>
+        read(parseHTML("<html><body>real content</body></html>").document),
+      isClosed: () => false,
+      url: () => "https://example.test/article",
     } as unknown as Page
     const result = await routeChallengeWait(clearedPage, ANUBIS_CHALLENGE, {}, 1000, undefined, {
       cloudflare: fail,
@@ -82,12 +86,21 @@ describe("Anubis PoW challenge detection", () => {
 
   test("resolver waits for Anubis's own JS to clear the markers", async () => {
     const pages = [ANUBIS_CHALLENGE, ANUBIS_CHALLENGE, "<html><body>real content</body></html>"]
-    const page = { content: async () => pages.shift() ?? "", waitForLoadState: async () => {} } as unknown as Page
+    const page = {
+      evaluate: async (read: (document: Document) => unknown) =>
+        read(parseHTML(pages.shift() ?? "<html><body>real content</body></html>").document),
+      isClosed: () => false,
+      url: () => "https://example.test/article",
+    } as unknown as Page
     expect(await waitForAnubisResolution(page, 5000)).toBe("ok")
   })
 
   test("resolver times out while the challenge persists", async () => {
-    const page = { content: async () => ANUBIS_CHALLENGE } as unknown as Page
+    const page = {
+      evaluate: async () => ({ state: "challenge" }),
+      isClosed: () => false,
+      url: () => "https://example.test/",
+    } as unknown as Page
     expect(await waitForAnubisResolution(page, 50)).toBe("timeout")
   })
 })
