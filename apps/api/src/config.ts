@@ -33,6 +33,13 @@ export const parseProxySelection = (value: string | undefined): ProxySelection =
   )
 }
 
+export const parseBrowserHardwareConcurrency = (value: string | undefined): number | undefined => {
+  if (value === undefined || value.trim() === "") return undefined
+  const parsed = Number(value)
+  if (Number.isSafeInteger(parsed) && parsed >= 1 && parsed <= 64) return parsed
+  throw new Error("BROWSER_HARDWARE_CONCURRENCY must be an integer from 1 to 64")
+}
+
 export const PORT = integerInRange(process.env.PORT, 8_191, 1, 65_535)
 export const POOL_SIZE = positiveInteger(process.env.BROWSER_POOL_SIZE, 1)
 // How long acquire() will poll for a free browser before rejecting with PoolExhaustedError.
@@ -51,6 +58,8 @@ export const RECYCLE_AFTER_TEMPORARY_CONTEXTS = nonNegativeInteger(process.env.B
 // minimal while still allowing CF/Imperva challenges to resolve. Raise if specific
 // targets fail with empty content (rare).
 export const BROWSER_MAX_CONTENT_PROCESSES = positiveInteger(process.env.BROWSER_MAX_CONTENT_PROCESSES, 2)
+// Optional native CPU count for worker-based challenges; unset keeps Camoufox defaults.
+export const BROWSER_HARDWARE_CONCURRENCY = parseBrowserHardwareConcurrency(process.env.BROWSER_HARDWARE_CONCURRENCY)
 // Size of the headful sub-pool, launched behind Xvfb for DataDome Device Check escalations.
 //
 // Off by default because this pool sits ON TOP of BROWSER_POOL_SIZE: one headful browser

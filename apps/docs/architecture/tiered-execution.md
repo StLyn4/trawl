@@ -127,3 +127,7 @@ This runs Tier 1, then Tier 2, then returns an error if both fail — never laun
 | 2    | 400–700ms    | Yes (warm)                |
 | 3    | Challenge-dependent | Yes (fresh solve)    |
 | 4    | 15–45s       | Yes (fresh solve + proxy) |
+
+Anubis uses the site's own JavaScript for proof of work. TRAWL polls a small browser DOM summary every 300 ms, respects the remaining request budget, and rejects denial pages or unresolved verification endpoints. Expired cached sessions escalate to a fresh browser context. PoW CPU and memory usage depend on the target policy and browser worker count; a 1 GiB limit is not sufficient for every public deployment.
+
+A closed Anubis browser page may be retried once for GET or HEAD within the original timeout. If the container cgroup reports a new OOM kill, TRAWL stops instead of repeating the expensive solve. On systems without cgroup counters, recovery remains limited to one retry. POST requests are never replayed.

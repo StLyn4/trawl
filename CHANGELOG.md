@@ -7,7 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Add optional `BROWSER_HARDWARE_CONCURRENCY` to size native browser PoW workers on small deployments; skip Anubis crash retries after a confirmed container OOM kill.
+
+- Keep Anubis PoW in the native browser with lightweight DOM polling, bounded waits, stale-session recovery and destination checks (#189).
+
 ### Added
+
+- Detect Anubis (TecharoHQ) proof-of-work and metarefresh interstitials, which are served at HTTP 200 and were previously returned to callers as successful Tier 1 content. Escalate them to the browser tiers, whose JS resolves the challenge by itself; a wall that persists after waiting reports `anubis-persistent` (#189).
 
 - Add opt-in `MITM_ESCALATE_429` for proxy HTTP 429 responses. Keep the default pass-through behavior, avoid caching plain rate limits as host-wide challenges, and preserve the original response when scraping fails (#181).
 
