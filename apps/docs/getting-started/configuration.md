@@ -226,6 +226,12 @@ BROWSER_RECYCLE_AFTER_CONTEXTS=8   # default - replace after 8 Tier 3/4 contexts
 BROWSER_RECYCLE_AFTER_CONTEXTS=0   # disable browser recycling entirely
 ```
 
+### `BROWSER_HARDWARE_CONCURRENCY`
+
+Optional browser-reported logical CPU count, from 1 to 64. Unset preserves Camoufox's generated fingerprint. This changes the native browser configuration, rather than injecting JavaScript into target pages.
+
+PoW implementations such as Anubis size their worker pool from this value. For a small container, try `BROWSER_HARDWARE_CONCURRENCY=4` with `BROWSER_POOL_SIZE=1`. Fewer workers can reduce CPU and RAM usage, but may take longer to solve difficult challenges. This is not a hard CPU or memory limit; configure those in Docker.
+
 ### `BROWSER_MAX_CONTENT_PROCESSES`
 
 **Default:** `2`

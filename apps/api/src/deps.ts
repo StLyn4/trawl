@@ -3,6 +3,7 @@ import type { AcquireOptions, OrchestratorDeps } from "@trawl/tiers"
 import type { SessionData } from "@trawl/types"
 import {
   ACQUIRE_TIMEOUT_MS,
+  BROWSER_HARDWARE_CONCURRENCY,
   BROWSER_MAX_CONTENT_PROCESSES,
   CLOSE_TIMEOUT_MS,
   HEADFUL_POOL_SIZE,
@@ -169,6 +170,7 @@ export const initPool = async ({
     acquireTimeoutMs: ACQUIRE_TIMEOUT_MS,
     recycleAfterTemporaryContexts: RECYCLE_AFTER_TEMPORARY_CONTEXTS,
     contentProcesses: BROWSER_MAX_CONTENT_PROCESSES,
+    hardwareConcurrency: BROWSER_HARDWARE_CONCURRENCY,
     stallAfterMs: STALL_TIMEOUT_MS,
     closeTimeoutMs: CLOSE_TIMEOUT_MS,
     launchTimeoutMs: LAUNCH_TIMEOUT_MS,
@@ -182,6 +184,7 @@ export const initPool = async ({
       acquireTimeoutMs: ACQUIRE_TIMEOUT_MS,
       recycleAfterTemporaryContexts: RECYCLE_AFTER_TEMPORARY_CONTEXTS,
       contentProcesses: BROWSER_MAX_CONTENT_PROCESSES,
+      hardwareConcurrency: BROWSER_HARDWARE_CONCURRENCY,
       virtualDisplay: true,
       label: "pool:headful",
       stallAfterMs: STALL_TIMEOUT_MS,

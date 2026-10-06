@@ -28,13 +28,19 @@ Tier 4: Residential Proxy ─── success ──→ cache cookies, return (15�
 
 ## Tier 1 — Plain HTTP Fetch
 
-The cheapest tier. Uses Bun's native `fetch()` with a realistic browser header set:
+The cheapest tier. Uses Bun's native `fetch()` with the same Firefox navigation header set the Camoufox browser tiers send:
 
 ```
-User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/131...
-Accept: text/html,application/xhtml+xml,...
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:152.0) Gecko/20100101 Firefox/152.0
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
 Accept-Language: en-US,en;q=0.9
-Accept-Encoding: gzip, deflate, br
+Accept-Encoding: gzip, deflate, br, zstd
+Upgrade-Insecure-Requests: 1
+Sec-Fetch-Dest: document
+Sec-Fetch-Mode: navigate
+Sec-Fetch-Site: none
+Sec-Fetch-User: ?1
+Priority: u=0, i
 ```
 
 **Succeeds for:** sites that serve the requested content without a browser challenge.
@@ -127,3 +133,7 @@ This runs Tier 1, then Tier 2, then returns an error if both fail — never laun
 | 2    | 400–700ms    | Yes (warm)                |
 | 3    | Challenge-dependent | Yes (fresh solve)    |
 | 4    | 15–45s       | Yes (fresh solve + proxy) |
+
+Anubis uses the site's own JavaScript for proof of work. TRAWL polls a small browser DOM summary every 300 ms, respects the remaining request budget, and rejects denial pages or unresolved verification endpoints. Expired cached sessions escalate to a fresh browser context. PoW CPU and memory usage depend on the target policy and browser worker count; a 1 GiB limit is not sufficient for every public deployment.
+
+A closed Anubis browser page may be retried once for GET or HEAD within the original timeout. If the container cgroup reports a new OOM kill, TRAWL stops instead of repeating the expensive solve. On systems without cgroup counters, recovery remains limited to one retry. POST requests are never replayed.

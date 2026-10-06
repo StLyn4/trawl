@@ -6,6 +6,7 @@ import { runTier2, type Tier2Result } from "./tiers/2"
 import { runTier3, type Tier3Result } from "./tiers/3"
 // Tier 4 (residential proxy) is dynamically imported only when needed.
 import type { runTier4, Tier4Result } from "./tiers/4"
+import { anubisOomKills } from "./utils/anubisRetry"
 import { createCrossedLandingGuard, type LandingProbe } from "./utils/crossedLanding"
 import { normalizeHtml } from "./utils/html"
 import { metaRefreshTarget } from "./utils/metaRefresh"
@@ -65,6 +66,7 @@ export interface OrchestratorDeps {
 }
 
 interface OrchestratorRunners {
+  oomKillCount?: typeof anubisOomKills
   tier1?: typeof runTier1
   tier2?: typeof runTier2
   tier3?: typeof runTier3
@@ -270,6 +272,25 @@ export async function scrape(
     handleReleased = false
   }
 
+  // A Camoufox content process can crash while running Anubis workers. Retry
+  // once in a new context on the same proxy, only for safe requests and within
+  // the original budget. A browser failure does not make a proxy unhealthy.
+  const oomKillCount = runners.oomKillCount ?? anubisOomKills
+  const initialOomKills = oomKillCount()
+  let anubisCrashRetried = false
+  const retryAnubisCrash = (result: TierResult): boolean => {
+    if (anubisCrashRetried || result.status !== "error" || result.reason !== "anubis-browser-closed") return false
+    if (req.method && req.method !== "GET" && req.method !== "HEAD") return false
+    if (Date.now() - totalStart >= maxTimeout) return false
+    if (typeof handle.browser.isConnected === "function" && !handle.browser.isConnected()) return false
+    const currentOomKills = oomKillCount()
+    if (initialOomKills !== undefined && currentOomKills !== undefined && currentOomKills !== initialOomKills)
+      return false
+    anubisCrashRetried = true
+    emit(result)
+    return true
+  }
+
   try {
     // Tier 2: browser with cached session
     const session = minTier <= 2 && !explicitProxy ? await deps.loadSession(domain) : undefined
@@ -399,6 +420,10 @@ export async function scrape(
           )
         }
 
+        if (retryAnubisCrash(t3)) {
+          attempt--
+          continue
+        }
         const pool = deps.proxyPool
         if (t3.status !== "blocked" || req.proxy || !proxy3 || !pool || attempt + 1 >= MAX_PROXY_ATTEMPTS) break
         pool.markBad(proxy3)
@@ -498,6 +523,10 @@ export async function scrape(
         )
       }
 
+      if (retryAnubisCrash(t4)) {
+        attempt--
+        continue
+      }
       const pool = deps.residentialProxyPool
       if (t4.status !== "blocked" || req.proxy || !pool || attempt + 1 >= MAX_PROXY_ATTEMPTS) break
       pool.markBad(proxy4)

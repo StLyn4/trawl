@@ -229,3 +229,5 @@ server {
   }
 }
 ```
+
+For PoW targets on small containers, optionally set `BROWSER_HARDWARE_CONCURRENCY=4`. This limits the reported CPU count that Anubis uses to size its worker pool; keep Docker memory and CPU limits configured separately.

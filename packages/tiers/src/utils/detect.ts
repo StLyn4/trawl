@@ -1,4 +1,5 @@
 import { parseHTML } from "linkedom"
+import { detectAnubisPage } from "./anubis"
 
 export type ChallengeType =
   | "cloudflare-interstitial"
@@ -12,6 +13,7 @@ export type ChallengeType =
   | "aws-waf"
   | "datadome"
   | "duckduckgo"
+  | "anubis"
   | "altcha"
   | "friendly-captcha"
   | "none"
@@ -40,7 +42,7 @@ export function getAwsWafAction(
 export function isCloudflarePage(html: string, headers: Record<string, string>): boolean {
   if (hasCloudflareChallengeHeader(headers)) return true
   if (hasDdosGuardChallenge(html)) return false
-  if (hasDuckDuckGoChallenge(html)) return false
+  if (hasDuckDuckGoChallenge(html) || hasAnubisChallenge(html)) return false
   if (hasAltcha(html) || hasFriendlyCaptcha(html)) return false
   if (/<title>[^<]*(just a moment|please wait|checking|attention required)[^<]*<\/title>/i.test(html)) return true
   if (/checking your browser/i.test(html)) return true
@@ -223,6 +225,12 @@ export function hasDuckDuckGoChallenge(html: string, _headers: Record<string, st
   return anomalyEndpoint && challengeForm && anomalyModal
 }
 
+// Anubis (TecharoHQ/anubis) serves its proof-of-work/metarefresh wall at HTTP 200, so
+// status alone can't flag it. Its marker <script id="anubis_*"> JSON tags and the
+export function hasAnubisChallenge(html: string): boolean {
+  return detectAnubisPage(html) !== undefined
+}
+
 // AWS WAF JavaScript challenge — the interstitial page that loads challenge.js to
 // issue an aws-waf-token cookie before redirecting to the protected resource.
 export function hasAwsWafChallenge(html: string, headers: Record<string, string> = {}, status?: number): boolean {
@@ -305,6 +313,7 @@ export function detectChallengeType(
   if (hasTurnstile(html)) return "cloudflare-turnstile"
   if (hasDdosGuardChallenge(html, headers)) return "ddos-guard"
   if (hasDuckDuckGoChallenge(html, headers)) return "duckduckgo"
+  if (hasAnubisChallenge(html)) return "anubis"
   if (hasAltcha(html)) return "altcha"
   if (hasFriendlyCaptcha(html)) return "friendly-captcha"
   if (isCloudflarePage(html, headers)) return "cloudflare-interstitial"
@@ -324,6 +333,7 @@ export function isBlocked(status: number, html: string): boolean {
   if (hasDdosGuardChallenge(html)) return true
   if (hasDataDomeChallenge(html)) return true
   if (hasDuckDuckGoChallenge(html)) return true
+  if (hasAnubisChallenge(html)) return true
   return false
 }
 
@@ -335,6 +345,7 @@ export function needsJs(html: string, headers: Record<string, string>): boolean 
     hasDdosGuardChallenge(html, headers) ||
     hasDataDomeChallenge(html, headers) ||
     hasDuckDuckGoChallenge(html, headers) ||
+    hasAnubisChallenge(html) ||
     hasAltcha(html) ||
     hasFriendlyCaptcha(html)
   )
@@ -377,13 +388,14 @@ export function isChallengeWall(
 ): boolean {
   if (challengeType === "none") return false
   if (status === 403 || status === 429 || status === 503) return true
-  // These four never serve real content alongside their wall, so the type alone settles
+  // These five never serve real content alongside their wall, so the type alone settles
   // it. For datadome that leans on the header invariant documented in getDataDomeAction().
   if (
     challengeType === "akamai" ||
     challengeType === "aws-waf" ||
     challengeType === "datadome" ||
-    challengeType === "duckduckgo"
+    challengeType === "duckduckgo" ||
+    challengeType === "anubis"
   )
     return true
   if (html && hasChallengeWallMarkers(html)) return true

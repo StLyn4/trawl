@@ -7,9 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Add optional `BROWSER_HARDWARE_CONCURRENCY` to size native browser PoW workers on small deployments; skip Anubis crash retries after a confirmed container OOM kill.
+
+- Keep Anubis PoW in the native browser with lightweight DOM polling, bounded waits, stale-session recovery and destination checks (#189).
+
 ### Added
 
 - Add opt-in `USER_PREFS` (JSON object) applied to every launched browser's Firefox prefs.
+- Detect Anubis (TecharoHQ) proof-of-work and metarefresh interstitials, which are served at HTTP 200 and were previously returned to callers as successful Tier 1 content. Escalate them to the browser tiers, whose JS resolves the challenge by itself; a wall that persists after waiting reports `anubis-persistent` (#189).
 
 - Add opt-in `MITM_ESCALATE_429` for proxy HTTP 429 responses. Keep the default pass-through behavior, avoid caching plain rate limits as host-wide challenges, and preserve the original response when scraping fails (#181).
 
@@ -19,9 +26,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Detect proxy redirects to Google Search's `/sorry/` challenge and enter the existing scraper ladder instead of forwarding the redirect to the client. Escalate final HTTP challenge pages and reject browser results that remain on the challenge URL (#180).
 
+- Return the raw document for non-HTML text responses: browser tiers no longer expose Firefox's plain-text viewer shell as `html`, and the MCP `read` tool passes plain-text, JSON and XML documents through untouched instead of readability-parsing them. Preserve text whitespace and empty files across tiers, honor declared charsets with a UTF-8 fallback, and accept short non-HTML text documents in fresh browser tiers (#198).
+
 - Avoid false Imperva challenge detection from documentation, cookie-name mentions, inactive markup, and ordinary CDN response headers; retain active resource frames, sensor bootstrap shells, and Imperva error response detection (#182).
 
 - Serve browser-rendered HTML through the MITM proxy with a UTF-8 charset while preserving the original bytes and charset of Tier 1 HTML responses (#186).
+
+- Send the Firefox navigation header set (`Accept`, zstd `Accept-Encoding`, `Upgrade-Insecure-Requests`, `Sec-Fetch-Dest/Mode/Site/User`, `Priority`) from Tier 1, matching what the Camoufox browser tiers present, and drop the extra `Cache-Control`/`Pragma` so plain HTTP requests no longer diverge from browser requests on header fingerprints (#190).
 
 ## [1.7.0] - 2026-09-28
 
