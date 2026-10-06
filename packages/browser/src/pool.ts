@@ -89,6 +89,7 @@ export class BrowserPool {
   private pollIntervalMs: number
   private recycleAfterTemporaryContexts: number
   private contentProcesses!: number
+  private hardwareConcurrency?: number
   private virtualDisplay: boolean
   private label: string
   private stallAfterMs: number
@@ -109,6 +110,7 @@ export class BrowserPool {
     pollIntervalMs = 100,
     recycleAfterTemporaryContexts = 8,
     contentProcesses = 2,
+    hardwareConcurrency,
     virtualDisplay = false,
     label = "pool",
     stallAfterMs = 180_000,
@@ -123,6 +125,7 @@ export class BrowserPool {
     pollIntervalMs?: number
     recycleAfterTemporaryContexts?: number
     contentProcesses?: number
+    hardwareConcurrency?: number
     virtualDisplay?: boolean
     label?: string
     stallAfterMs?: number
@@ -136,7 +139,13 @@ export class BrowserPool {
     this.acquireTimeoutMs = acquireTimeoutMs
     this.pollIntervalMs = pollIntervalMs
     this.recycleAfterTemporaryContexts = recycleAfterTemporaryContexts
+    if (
+      hardwareConcurrency !== undefined &&
+      (!Number.isSafeInteger(hardwareConcurrency) || hardwareConcurrency < 1 || hardwareConcurrency > 64)
+    )
+      throw new Error("hardwareConcurrency must be an integer from 1 to 64")
     this.contentProcesses = contentProcesses
+    this.hardwareConcurrency = hardwareConcurrency
     this.virtualDisplay = virtualDisplay
     this.label = label
     this.stallAfterMs = stallAfterMs
@@ -252,7 +261,12 @@ export class BrowserPool {
       main_world_eval: true,
       // forceScopeAccess: C++-level patch granting cross-origin frame scope without disabling
       // COOP at the prefs level (which CF detects via window.crossOriginIsolated)
-      config: { forceScopeAccess: true },
+      config: {
+        forceScopeAccess: true,
+        ...(this.hardwareConcurrency === undefined
+          ? {}
+          : { "navigator.hardwareConcurrency": this.hardwareConcurrency }),
+      },
       // Locale matches the picked fingerprint so navigator.language + HTTP Accept-Language
       // + browser-side Intl locale all align.
       locale: fingerprint.locale,
