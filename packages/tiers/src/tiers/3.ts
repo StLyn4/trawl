@@ -11,7 +11,6 @@ import type {
 import { capturePageFavicons } from "../favicons"
 import { capturePageScreenshot } from "../screenshot"
 import { solvePageCaptchas } from "../solvers"
-import { hasAnubisDestinationContent, isAnubisVerificationUrl } from "../utils/anubis"
 import { reportBlocked } from "../utils/blockedEvidence"
 import { attachPageCapture, type CaptureOptions } from "../utils/capture"
 import { routeChallengeWait } from "../utils/challengeRouter"
@@ -143,11 +142,9 @@ export async function runTier3(
     }
     // Otherwise (navigation interrupted by CF redirect) — fall through and keep going
 
-    const anubisRefresh = capture.followMetaRefresh && hasAnubisChallenge(await page.content().catch(() => ""))
-    const refresh =
-      capture.followMetaRefresh && !anubisRefresh
-        ? await followMetaRefresh(page, maxTimeout - (Date.now() - start), validateOutboundUrl)
-        : undefined
+    const refresh = capture.followMetaRefresh
+      ? await followMetaRefresh(page, maxTimeout - (Date.now() - start), validateOutboundUrl)
+      : undefined
     if (refresh && refresh.status !== "ok") {
       return { tier: 3, status: refresh.status, durationMs: Date.now() - start, reason: refresh.reason }
     }
@@ -163,26 +160,16 @@ export async function runTier3(
       undefined,
       mainResponse.status,
       initialCookies,
-      () => ({ status: mainResponse.status, url: mainResponse.response?.url() }),
     )
 
-    if (resolution === "browser-closed") {
-      return { tier: 3, status: "error", reason: "anubis-browser-closed", durationMs: Date.now() - start }
-    }
-
     if (resolution !== "ok") {
-      const status =
-        resolution === "blocked" || resolution === "ip-blocked" || resolution === "captcha-required"
-          ? "blocked"
-          : "timeout"
+      const status = resolution === "ip-blocked" || resolution === "captcha-required" ? "blocked" : "timeout"
       const reason =
-        resolution === "blocked"
-          ? "anubis-blocked"
-          : resolution === "captcha-required"
-            ? `${challengeType}-captcha-required`
-            : resolution === "ip-blocked"
-              ? (DATACENTER_BLOCKED_REASONS[challengeType] ?? DEFAULT_DATACENTER_BLOCKED_REASON)
-              : `${challengeType === "none" ? "cloudflare" : challengeType}-challenge-timeout`
+        resolution === "captcha-required"
+          ? `${challengeType}-captcha-required`
+          : resolution === "ip-blocked"
+            ? (DATACENTER_BLOCKED_REASONS[challengeType] ?? DEFAULT_DATACENTER_BLOCKED_REASON)
+            : `${challengeType === "none" ? "cloudflare" : challengeType}-challenge-timeout`
       await reportBlocked(
         page,
         capture.blockedEvidence,
@@ -190,13 +177,6 @@ export async function runTier3(
         maxTimeout - (Date.now() - start),
       )
       return { tier: 3, status, durationMs: Date.now() - start, reason }
-    }
-
-    if (anubisRefresh) {
-      const destination = await followMetaRefresh(page, maxTimeout - (Date.now() - start), validateOutboundUrl)
-      if (destination.status !== "ok") {
-        return { tier: 3, status: destination.status, durationMs: Date.now() - start, reason: destination.reason }
-      }
     }
 
     // challengeWait calls waitForLoadState('load') but the CF interstitial iframe can
@@ -233,21 +213,6 @@ export async function runTier3(
 
     const html = await page.content()
 
-    if (
-      hasAnubisChallenge(html) ||
-      isAnubisVerificationUrl(page.url()) ||
-      (challengeType === "anubis" && (mainResponse.status >= 400 || !hasAnubisDestinationContent(html)))
-    ) {
-      const reason = "anubis-persistent"
-      await reportBlocked(
-        page,
-        capture.blockedEvidence,
-        { tier: 3, status: "blocked", reason, statusCode: mainResponse.status, html, screenshot: shot },
-        maxTimeout - (Date.now() - start),
-      )
-      return { tier: 3, status: "blocked", durationMs: Date.now() - start, reason }
-    }
-
     if (isGoogleSorryUrl(page.url())) {
       const reason = "google-sorry-persistent"
       await reportBlocked(
@@ -267,7 +232,7 @@ export async function runTier3(
     }
 
     // Empty shell means the browser got nothing — treat as a load failure
-    if (html.length < 100 && challengeType !== "anubis") {
+    if (html.length < 100) {
       const errMsg = gotoErr instanceof Error ? gotoErr.message.split("\n")[0] : "page returned empty content"
       return { tier: 3, status: "error", durationMs: Date.now() - start, reason: errMsg }
     }
@@ -409,6 +374,26 @@ export async function runTier3(
         maxTimeout - (Date.now() - start),
       )
       return { tier: 3, status: "blocked", durationMs: Date.now() - start, reason: "duckduckgo-persistent" }
+    }
+
+    if (hasAnubisChallenge(html)) {
+      const pageTitle = await page.title().catch(() => "?")
+      const pageUrl = page.url()
+      console.log(`[tier3] anubis-persistent: url="${pageUrl}" title="${pageTitle}" html=${html.length}b`)
+      await reportBlocked(
+        page,
+        capture.blockedEvidence,
+        {
+          tier: 3,
+          status: "blocked",
+          reason: "anubis-persistent",
+          statusCode: mainResponse.status,
+          html,
+          screenshot: shot,
+        },
+        maxTimeout - (Date.now() - start),
+      )
+      return { tier: 3, status: "blocked", durationMs: Date.now() - start, reason: "anubis-persistent" }
     }
 
     if (isBlocked(mainResponse.status, html)) {

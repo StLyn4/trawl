@@ -2,7 +2,6 @@ import { rootCertificates } from "node:tls"
 import { brotliDecompressSync, gunzipSync, inflateSync, zstdDecompressSync } from "node:zlib"
 import { FINGERPRINT } from "@trawl/browser"
 import type { TierResult } from "@trawl/types"
-import { anubisInspectionText, detectAnubisPage } from "../utils/anubis"
 import { describeCertificateError, isCertificateError } from "../utils/certificate"
 import type { ChallengeType } from "../utils/detect"
 import {
@@ -10,6 +9,7 @@ import {
   getDataDomeAction,
   hasAkamaiChallenge,
   hasAltcha,
+  hasAnubisChallenge,
   hasAwsWafCaptcha,
   hasAwsWafChallenge,
   hasDuckDuckGoChallenge,
@@ -190,22 +190,6 @@ export async function runTier1(
     const previewLen = Math.min(decodedBytes.length, 65536)
     const previewText = new TextDecoder("utf-8", { fatal: false }).decode(decodedBytes.subarray(0, previewLen))
 
-    const anubis = detectAnubisPage(anubisInspectionText(decodedBytes, previewText))
-    if (anubis) {
-      return {
-        tier: 1,
-        certificateError,
-        status: anubis === "blocked" ? "blocked" : "needs-js",
-        durationMs: Date.now() - start,
-        reason: anubis === "blocked" ? "anubis-blocked" : "anubis-challenge",
-        challenge: "anubis",
-        responseHeaders,
-        contentType,
-        body: rawBytes,
-        statusCode: res.status,
-      }
-    }
-
     if (isGoogleSorryUrl(res.url || currentUrl)) {
       return {
         tier: 1,
@@ -244,6 +228,21 @@ export async function runTier1(
         durationMs: Date.now() - start,
         reason: "duckduckgo-anomaly-challenge",
         challenge: "duckduckgo",
+        responseHeaders,
+        contentType,
+        body: rawBytes,
+        statusCode: res.status,
+      }
+    }
+
+    if (hasAnubisChallenge(previewText)) {
+      return {
+        tier: 1,
+        certificateError,
+        status: "needs-js",
+        durationMs: Date.now() - start,
+        reason: "anubis-challenge",
+        challenge: "anubis",
         responseHeaders,
         contentType,
         body: rawBytes,
