@@ -120,6 +120,7 @@ TRAWL and Redis.
 | `BROWSER_RECYCLE_AFTER_CONTEXTS` | `8`                  | Rolling-replace after this many Tier 3/4 contexts; `0` disables it      |
 | `BROWSER_MAX_CONTENT_PROCESSES`  | `2`                  | Maximum Firefox content processes per browser                           |
 | `SCRAPE_MIN_TIER`                | `1`                  | Lowest scraper tier allowed across every endpoint                       |
+| `USER_PREFS`                     | —                    | Optional JSON Firefox prefs applied to every launched browser           |
 | `SESSION_CACHE_DRIVER`           | `redis`              | Cache backend; minimal Compose defaults to `memory`                      |
 | `REDIS_URL`                      | `redis://redis:6379` | Redis connection (set automatically in compose)                         |
 | `REDIS_SESSION_TTL_SECONDS`      | `3600`               | Lifetime of cached sessions                                             |
