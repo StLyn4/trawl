@@ -1,3 +1,5 @@
+import { normalizeHtml } from "./html"
+
 export interface MinimalResponse {
   url(): string
   status(): number
@@ -23,6 +25,14 @@ export const isHtmlContentType = (contentType: string | undefined): boolean => {
   if (!contentType) return false
   const mediaType = contentType.split(";", 1)[0]?.trim().toLowerCase()
   return mediaType === "text/html" || mediaType === "application/xhtml+xml"
+}
+
+// Browsers wrap non-HTML text in a viewer shell, so prefer the captured raw body;
+// fall back to the rendered DOM, or "" for binary.
+export const browserDocumentHtml = (contentType: string | undefined, pageHtml: string, body?: Uint8Array): string => {
+  if (contentType && !isTextContentType(contentType)) return ""
+  if (!contentType || isHtmlContentType(contentType) || !body?.length) return normalizeHtml(pageHtml)
+  return normalizeHtml(new TextDecoder("utf-8", { fatal: false }).decode(body))
 }
 
 export const captureResponse = async (response?: MinimalResponse): Promise<CapturedResponse> => {

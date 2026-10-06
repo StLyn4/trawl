@@ -22,11 +22,10 @@ import {
   isCloudflarePage,
 } from "../utils/detect"
 import { isGoogleSorryUrl } from "../utils/googleSorry"
-import { normalizeHtml } from "../utils/html"
 import { trackMainDocumentResponses } from "../utils/mainResponse"
 import { followMetaRefresh } from "../utils/metaRefresh"
 import { installOutboundPolicy, type OutboundUrlValidator } from "../utils/outboundPolicy"
-import { captureResponse, isHtmlContentType, isTextContentType } from "../utils/response"
+import { browserDocumentHtml, captureResponse, isHtmlContentType } from "../utils/response"
 import type { RouteLike } from "../utils/sanitize"
 import { routeContinueOverrides } from "../utils/sanitize"
 import { waitForVisibleSelector } from "../utils/waitForVisibleSelector"
@@ -272,9 +271,9 @@ export async function runTier2(
       status: "success",
       durationMs: Date.now() - start,
       effectiveUrl: page.url(),
-      // For HTML/text content-types, `html` is the rendered DOM. For binary, leave
+      // For HTML, `html` is the rendered DOM; for non-HTML text it is the raw document. For binary, leave
       // empty so /scrape consumers know to use `body`/`contentType`.
-      html: !captured.contentType || isTextContentType(captured.contentType) ? normalizeHtml(finalHtml) : "",
+      html: browserDocumentHtml(captured.contentType, finalHtml, captured.body),
       ...captured,
       cookies,
       statusCode: mainResponse.status,

@@ -133,6 +133,26 @@ describe("MCP route", () => {
     expect(result.structuredContent).toMatchObject({ format: "markdown", characters: 80, truncated: true })
   })
 
+  test("passes plain-text documents through untouched instead of readability-parsing them", async () => {
+    const source = 'const settings = a_b\nif (value < 3 && value > 1) log("<done>")'
+    const app = mcpRoute({
+      poolReady: () => true,
+      runScrape: async () => ({ ...baseResult, html: source, contentType: "text/plain; charset=utf-8" }),
+    })
+    const response = await app.handle(
+      rpc("tools/call", { name: "read", arguments: { url: "https://1.1.1.1/raw.txt" } }),
+    )
+    const result = (await response.json()).result
+    expect(result.isError).toBeUndefined()
+    expect(result.content[0].text).toBe(source)
+    expect(result.structuredContent).toMatchObject({
+      title: baseResult.url,
+      format: "markdown",
+      characters: source.length,
+      truncated: false,
+    })
+  })
+
   test("returns screenshots as MCP image content and forces a browser tier", async () => {
     let received: unknown
     const app = mcpRoute({

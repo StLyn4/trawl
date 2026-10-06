@@ -26,13 +26,12 @@ import {
   isCloudflarePage,
 } from "../utils/detect"
 import { isGoogleSorryUrl } from "../utils/googleSorry"
-import { normalizeHtml } from "../utils/html"
 import { trackMainDocumentResponses } from "../utils/mainResponse"
 import { followMetaRefresh } from "../utils/metaRefresh"
 import { isHardNetworkFailure } from "../utils/network"
 import { installOutboundPolicy, type OutboundUrlValidator } from "../utils/outboundPolicy"
 import { isProxyTransportFailure, normalizeProxyError, proxyResponseFailure } from "../utils/proxyFailure"
-import { captureResponse, isHtmlContentType, isTextContentType } from "../utils/response"
+import { browserDocumentHtml, captureResponse, isHtmlContentType } from "../utils/response"
 import type { RouteLike } from "../utils/sanitize"
 import { routeContinueOverrides } from "../utils/sanitize"
 import { waitForVisibleSelector } from "../utils/waitForVisibleSelector"
@@ -383,7 +382,7 @@ export async function runTier4(
       status: "success",
       durationMs: Date.now() - start,
       effectiveUrl: page.url(),
-      html: !captured.contentType || isTextContentType(captured.contentType) ? normalizeHtml(html) : "",
+      html: browserDocumentHtml(captured.contentType, html, captured.body),
       ...captured,
       cookies,
       userAgent: await page.evaluate(() => navigator.userAgent).catch(() => FINGERPRINT.userAgent),
