@@ -13,6 +13,7 @@ import {
   PORT,
   SCRAPE_MIN_TIER,
   SCRAPE_PROXY_SELECTION,
+  USER_PREFS,
 } from "./config"
 import { getDeps, initPool } from "./deps"
 import { registerLifecycleHandlers } from "./lifecycle"
@@ -24,6 +25,7 @@ createApiApp().listen(PORT)
 console.log(`[api] TRAWL starting on :${PORT}  (pool: ${POOL_SIZE} browser${POOL_SIZE === 1 ? "" : "s"})`)
 if (SCRAPE_MIN_TIER > 1) console.log(`[api] scraper tier floor: ${SCRAPE_MIN_TIER}`)
 if (SCRAPE_PROXY_SELECTION !== "failover") console.log(`[api] proxy selection: ${SCRAPE_PROXY_SELECTION}`)
+if (Object.keys(USER_PREFS).length > 0) console.log(`[api] user prefs changed: ${Object.keys(USER_PREFS).join(', ')}`)
 
 const state: { proxyHandle?: MitmProxyHandle } = {}
 const stopMemoryMonitor = startMemoryMonitor(POOL_SIZE, HEADFUL_POOL_SIZE)

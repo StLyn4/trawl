@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Detect Anubis (TecharoHQ) proof-of-work and metarefresh interstitials, which are served at HTTP 200 and were previously returned to callers as successful Tier 1 content. Escalate them to the browser tiers, whose JS resolves the challenge by itself; a wall that persists after waiting reports `anubis-persistent` (#189).
 
+- Add opt-in `USER_PREFS` (JSON object) applied to every launched browser's Firefox prefs.
+
 - Add opt-in `MITM_ESCALATE_429` for proxy HTTP 429 responses. Keep the default pass-through behavior, avoid caching plain rate limits as host-wide challenges, and preserve the original response when scraping fails (#181).
 
 - Add opt-in `followMetaRefresh` to the native scrape API: HTTP forwarders escalate to browser tiers, which follow bounded meta refresh redirects using the document base URL and existing proxy, cookies, outbound policy and TLS checks. Browser navigation interruptions are handled within the same deadline; network error documents, failed navigation, loops and spent refresh budgets fail the attempt instead of returning forwarding content. Addresses the request in #184 and the gaps identified in #185.

@@ -144,6 +144,17 @@ floor to Tier 2 but cannot lower this deployment-wide setting.
 For the MITM forward proxy, this setting applies only after the request enters the scraper ladder.
 Set `MITM_ALWAYS_SCRAPE=true` as well when the proxy's direct Tier 0 probe must also be disabled.
 
+## User Prefs
+
+### `USER_PREFS`
+
+**Default:** _(unset)_
+
+A JSON object of Firefox prefs applied to every launched browser, merged after TRAWL's built-in
+launch prefs so entries can override them. This exposes browser-level behavior the API has no flag for.
+Prefs apply at browser launch, so restart TRAWL after changing them. An invalid value stops TRAWL
+at startup.
+
 ## Browser Pool
 
 ### `METRICS_DASHBOARD_ENABLED` and `METRICS_DASHBOARD_TOKEN`

@@ -96,6 +96,7 @@ export class BrowserPool {
   private launchTimeoutMs: number
   private healthIntervalMs: number
   private browserFactory?: BrowserFactory
+  private userPrefs: Record<string, string | number | boolean>
   private healthInterval?: ReturnType<typeof setInterval>
   private abandonedLaunches = 0
   private maxAbandonedLaunches: number
@@ -117,6 +118,7 @@ export class BrowserPool {
     healthIntervalMs = 30_000,
     maxAbandonedLaunches = 3,
     browserFactory,
+    userPrefs = {},
   }: {
     poolSize: number
     acquireTimeoutMs?: number
@@ -131,6 +133,7 @@ export class BrowserPool {
     healthIntervalMs?: number
     maxAbandonedLaunches?: number
     browserFactory?: BrowserFactory
+    userPrefs?: Record<string, string | number | boolean>
   }) {
     this.poolSize = poolSize
     this.acquireTimeoutMs = acquireTimeoutMs
@@ -145,6 +148,7 @@ export class BrowserPool {
     this.healthIntervalMs = healthIntervalMs
     this.maxAbandonedLaunches = maxAbandonedLaunches
     this.browserFactory = browserFactory
+    this.userPrefs = userPrefs
   }
 
   // A checkout past its deadline is not slow, it's wedged. The deadline is the caller's
@@ -300,6 +304,9 @@ export class BrowserPool {
         "extensions.screenshots.system.enabled": false,
         "extensions.screenshots.background.enabled": false,
         "browser.sessionstore.max_tabs_undo": 0,
+
+        // USER_PREFS loads last so it can override any built-in above.
+        ...this.userPrefs,
       },
     })
 
