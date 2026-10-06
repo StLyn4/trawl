@@ -20,6 +20,7 @@ import {
   isBlocked,
   isCloudflarePage,
 } from "../utils/detect"
+import { isGoogleSorryUrl } from "../utils/googleSorry"
 import { normalizeHtml } from "../utils/html"
 import type { OutboundUrlValidator } from "../utils/outboundPolicy"
 import { normalizeProxyError, proxyResponseFailure } from "../utils/proxyFailure"
@@ -188,6 +189,21 @@ export async function runTier1(
     // sequences with U+FFFD so detection helpers don't throw on non-UTF8 data.
     const previewLen = Math.min(decodedBytes.length, 65536)
     const previewText = new TextDecoder("utf-8", { fatal: false }).decode(decodedBytes.subarray(0, previewLen))
+
+    if (isGoogleSorryUrl(res.url || currentUrl)) {
+      return {
+        tier: 1,
+        certificateError,
+        status: "needs-js",
+        durationMs: Date.now() - start,
+        reason: "google-sorry-challenge",
+        challenge: "recaptcha",
+        responseHeaders,
+        contentType,
+        body: rawBytes,
+        statusCode: res.status,
+      }
+    }
 
     if (isCloudflarePage(previewText, responseHeaders)) {
       return {
