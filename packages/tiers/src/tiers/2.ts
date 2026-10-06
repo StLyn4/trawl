@@ -21,6 +21,7 @@ import {
   isBrowserErrorPage,
   isCloudflarePage,
 } from "../utils/detect"
+import { isGoogleSorryUrl } from "../utils/googleSorry"
 import { normalizeHtml } from "../utils/html"
 import { trackMainDocumentResponses } from "../utils/mainResponse"
 import { followMetaRefresh } from "../utils/metaRefresh"
@@ -224,6 +225,23 @@ export async function runTier2(
     const evidence = await pageCapture.drain(maxTimeout - (Date.now() - start))
 
     const finalHtml = await page.content()
+    if (isGoogleSorryUrl(page.url())) {
+      const reason = "google-sorry-persistent"
+      await reportBlocked(
+        page,
+        capture.blockedEvidence,
+        {
+          tier: 2,
+          status: "blocked",
+          reason,
+          statusCode: mainResponse.status,
+          html: finalHtml,
+          screenshot: shot,
+        },
+        maxTimeout - (Date.now() - start),
+      )
+      return { tier: 2, status: "blocked", durationMs: Date.now() - start, reason }
+    }
     if (isCloudflarePage(finalHtml, mainResponse.headers)) {
       await reportBlocked(
         page,

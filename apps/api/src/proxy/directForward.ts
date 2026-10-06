@@ -18,6 +18,7 @@ import net from "node:net"
 import tls from "node:tls"
 import { brotliDecompressSync, gunzipSync, inflateSync } from "node:zlib"
 import { detectChallengeType, isChallengeWall } from "@trawl/tiers"
+import { isGoogleSorryRedirect } from "./googleSorry"
 import { shouldStream } from "./streaming"
 
 export interface ForwardResultBuffered {
@@ -238,14 +239,16 @@ async function readHttpResponse(
   // Cloudflare defines `cf-mitigated: challenge` as an authoritative Challenge
   // Page signal. Escalate as soon as the headers arrive instead of waiting for
   // an unbounded/keep-alive response body to finish (or hit the 30s socket timeout).
-  // Body-based detection below remains the fallback for challenge variants that
-  // do not send this header.
+  // Google search also redirects to /sorry/ before serving its CAPTCHA page.
+  // Recognize that destination without following it in the direct forwarder.
+  // Body-based detection below remains the fallback for other challenge variants.
   const headerChallengeType = detectChallengeType("", headers, status)
   if (
     !skipChallengeDetection &&
     (headerChallengeType === "cloudflare-interstitial" ||
       headerChallengeType === "aws-waf" ||
-      headerChallengeType === "datadome")
+      headerChallengeType === "datadome" ||
+      isGoogleSorryRedirect(status, headers.location, url))
   ) {
     socket.destroy()
     return {
