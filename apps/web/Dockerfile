@@ -17,7 +17,7 @@ COPY apps/web/ ./apps/web/
 WORKDIR /app/apps/web
 RUN node /app/node_modules/nuxt/bin/nuxt.mjs generate
 
-FROM nginx:1.31.7-alpine AS runner
+FROM nginx:1.31.8-alpine AS runner
 
 COPY --from=builder /app/apps/web/.output/public /usr/share/nginx/html
 COPY apps/web/nginx.conf /etc/nginx/conf.d/default.conf

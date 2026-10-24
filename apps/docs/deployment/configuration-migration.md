@@ -5,6 +5,13 @@ description: Upgrade notes and environment-variable changes across TRAWL release
 
 # Configuration migration
 
+## Upgrading from v1.9.2 to v1.9.3
+
+No configuration changes are required. This patch preserves charset-less UTF-8
+HTML fragments across the scraping APIs, MCP and the proxy, and stops pending
+Cloudflare clicks after a challenge clears. Bun and Node.js build tooling include
+the upstream Brotli security fixes.
+
 ## Upgrading from v1.9.1 to v1.9.2
 
 No configuration changes are required. `GET /metrics` now exposes browser pool

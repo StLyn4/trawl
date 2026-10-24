@@ -1,6 +1,6 @@
 {
   "name": "@trawl/web",
-  "version": "1.9.2",
+  "version": "1.9.3",
   "private": true,
   "type": "module",
   "scripts": {
@@ -10,7 +10,7 @@
     "typecheck": "nuxt typecheck"
   },
   "devDependencies": {
-    "@nuxt/fonts": "^1.0.1",
+    "@nuxt/fonts": "^1.1.0",
     "@nuxtjs/color-mode": "^4.0.1",
     "@nuxtjs/seo": "6.0.1",
     "@vueuse/motion": "^3.0.3",

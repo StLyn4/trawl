@@ -18,7 +18,7 @@ COPY apps/docs/ ./apps/docs/
 WORKDIR /app/apps/docs
 RUN bun run build
 
-FROM nginx:1.31.7-alpine AS runner
+FROM nginx:1.31.8-alpine AS runner
 
 COPY --from=builder /app/apps/docs/.vitepress/dist /usr/share/nginx/html
 COPY apps/docs/nginx.conf /etc/nginx/conf.d/default.conf
