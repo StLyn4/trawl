@@ -17,6 +17,12 @@ describe.skipIf(process.env.TRAWL_RAW_TEXT_TESTS !== "1")("Camoufox raw text int
     { name: "plain", type: "text/plain", text: 'const a_b = "<done>"' },
     { name: "json", type: "application/json", text: '{"ok":[1,2,3]}' },
     { name: "xml", type: "application/xml", text: '<?xml version="1.0"?><rss><item>ok</item></rss>' },
+    { name: "html-fragment", type: "text/html", text: '<div data-ct="第1話">中文</div>' },
+    {
+      name: "html-fragment-telemetry",
+      type: "text/html",
+      text: '<!doctype html><link rel="stylesheet" href="data:text/css,div{}"><div data-ct="第1話">中文</div><script>document.body.append(document.createElement("iframe"))</script>',
+    },
     { name: "whitespace", type: "text/plain", text: "  alpha\r\n\r\n\r\nbeta  \n" },
     { name: "empty", type: "text/plain", text: "" },
     { name: "latin1", type: "text/plain; charset=iso-8859-1", text: "café", bytes: Buffer.from([99, 97, 102, 233]) },

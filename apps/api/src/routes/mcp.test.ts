@@ -156,6 +156,24 @@ describe("MCP route", () => {
     })
   })
 
+  test.each(["markdown", "text"])("reads every UTF-8 HTML fragment in %s format", async (format) => {
+    const app = mcpRoute({
+      poolReady: () => true,
+      runScrape: async () => ({
+        ...baseResult,
+        html: "<div>第1話 中文</div><div>第2話 日本語</div>",
+        contentType: "text/html",
+      }),
+    })
+    const response = await app.handle(
+      rpc("tools/call", { name: "read", arguments: { url: "https://1.1.1.1/fragment", format } }),
+    )
+    const result = (await response.json()).result
+    expect(result.isError).toBeUndefined()
+    expect(result.content[0].text).toContain("第1話 中文")
+    expect(result.content[0].text).toContain("第2話 日本語")
+  })
+
   test.each(["markdown", "text"])("preserves empty text documents in %s format", async (format) => {
     const app = mcpRoute({
       poolReady: () => true,

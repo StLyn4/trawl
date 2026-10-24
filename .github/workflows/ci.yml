@@ -21,10 +21,10 @@ jobs:
           ref: ${{ inputs.ref }}
       - uses: oven-sh/setup-bun@v2
         with:
-          bun-version: 1.4.3
+          bun-version: 1.4.4
       - uses: actions/setup-node@v7
         with:
-          node-version: 26.12.0
+          node-version: 26.12.1
       - run: bun install --frozen-lockfile
       - run: bun run verify
 

@@ -500,9 +500,9 @@ export async function serveViaScrape(
       }
     }
 
-    // Browser tiers expose decoded navigation bodies and, for HTML, the rendered
-    // solved DOM. responseFromScrapeResult removes upstream representation
-    // headers that no longer describe those bytes; Tier 1 remains byte-faithful.
+    // Browser tiers expose decoded navigation bodies. responseFromScrapeResult
+    // removes upstream representation headers that no longer describe those
+    // bytes; Tier 1 remains byte-faithful.
     const response = responseFromScrapeResult(scrapeResult)
     if (opts.debug) {
       console.log(

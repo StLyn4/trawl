@@ -16,7 +16,14 @@ import { followMetaRefresh } from "../utils/metaRefresh"
 import { isHardNetworkFailure } from "../utils/network"
 import { installOutboundPolicy, type OutboundUrlValidator } from "../utils/outboundPolicy"
 import { isProxyTransportFailure, normalizeProxyError, proxyResponseFailure } from "../utils/proxyFailure"
-import { browserDocumentHtml, captureResponse, isHtmlContentType, isNonHtmlTextContentType } from "../utils/response"
+import {
+  browserDocumentHtml,
+  type CapturedResponse,
+  captureResponse,
+  isCharsetLessUtf8HtmlFragment,
+  isHtmlContentType,
+  isNonHtmlTextContentType,
+} from "../utils/response"
 import type { RouteLike } from "../utils/sanitize"
 import { routeContinueOverrides } from "../utils/sanitize"
 import { restoreSessionStorage } from "../utils/sessionStorage"
@@ -244,6 +251,7 @@ async function runBrowserTierTask<T extends 3 | 4>(
     if (overlapWidgetSettling) await sleep(Math.max(0, settleUntil - Date.now()), budget.signal)
 
     const { html, shot, evidence } = await captureBrowserDocument(page, capture, pageCapture, budget, screenshot)
+    let captured: CapturedResponse | undefined
 
     const wall = persistentBrowserWall(html, page.url(), mainResponse.headers, mainResponse.status, challengeType)
     // Anubis verification URLs and Google's sorry URL identify a wall even when
@@ -256,9 +264,12 @@ async function runBrowserTierTask<T extends 3 | 4>(
         challengeType !== "anubis" &&
         !isNonHtmlTextContentType(mainResponse.headers["content-type"])
       ) {
-        const errMsg =
-          tier === 3 && gotoErr instanceof Error ? gotoErr.message.split("\n")[0] : "page returned empty content"
-        return { tier, status: "error", durationMs: Date.now() - start, reason: errMsg }
+        captured = await captureResponse(mainResponse.response)
+        if (!isCharsetLessUtf8HtmlFragment(captured.contentType, captured.body, html)) {
+          const errMsg =
+            tier === 3 && gotoErr instanceof Error ? gotoErr.message.split("\n")[0] : "page returned empty content"
+          return { tier, status: "error", durationMs: Date.now() - start, reason: errMsg }
+        }
       }
 
       // Browser never reached a real server (DNS/connection/TLS failure) - the "navigation
@@ -292,7 +303,7 @@ async function runBrowserTierTask<T extends 3 | 4>(
 
     const cookies: Cookie[] = toCookies(await context.cookies())
 
-    const captured = await captureResponse(mainResponse.response)
+    captured ??= await captureResponse(mainResponse.response)
 
     return {
       tier,

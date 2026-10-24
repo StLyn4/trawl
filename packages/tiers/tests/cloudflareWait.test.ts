@@ -165,6 +165,49 @@ test("settled content does not trigger a keyboard click for a provider link", as
   expect(presses).toBe(0)
 })
 
+test("keyboard fallback stops before Space when Cloudflare clears after Tab", async () => {
+  const page = pageFixture()
+  const keys: string[] = []
+  let cleared = false
+  page.content = async () => (cleared ? destination : wall)
+  page.keyboard.press = async (key?: string) => {
+    keys.push(key ?? "")
+    cleared = true
+  }
+  page.title = async () => (cleared ? "Article" : "Just a moment...")
+  expect(await attemptTurnstileClick(page as unknown as Page)).toBe(false)
+  expect(keys).toEqual(["Tab"])
+})
+
+test("interstitial clicks stop when Cloudflare clears during frame discovery", async () => {
+  const page = pageFixture()
+  let cleared = false
+  let clicks = 0
+  page.title = async () => (cleared ? "Article" : "Just a moment...")
+  page.content = async () => (cleared ? destination : wall)
+  page.frames = () => [
+    {
+      url: () => "https://challenges.cloudflare.com/turnstile/widget",
+      evaluateHandle: async () => {
+        throw new Error("Shadow root unavailable")
+      },
+      locator: () => ({
+        first: () => ({
+          isVisible: async () => {
+            cleared = true
+            return true
+          },
+          click: async () => {
+            clicks++
+          },
+        }),
+      }),
+    },
+  ]
+  expect(await attemptTurnstileClick(page as unknown as Page)).toBe(false)
+  expect(clicks).toBe(0)
+})
+
 test("shadow traversal visits each subtree once and releases browser handles", async () => {
   let evaluations = 0
   let released = 0
@@ -269,6 +312,35 @@ test("an embedded widget frame does not keep a cleared page in the interstitial 
   expect(clicked).toBe(false)
 })
 
+test("coordinate fallback stops when Cloudflare clears during mouse movement", async () => {
+  const page = pageFixture()
+  let cleared = false
+  let clicks = 0
+  page.title = async () => (cleared ? "Article" : "Just a moment...")
+  page.content = async () => (cleared ? destination : wall)
+  page.frames = () => [
+    {
+      url: () => "https://challenges.cloudflare.com/turnstile/widget",
+      evaluateHandle: async () => {
+        throw new Error("Shadow root unavailable")
+      },
+      locator: () => ({ first: () => ({ isVisible: async () => false }) }),
+      frameElement: async () => ({
+        boundingBox: async () => ({ x: 10, y: 100, width: 300, height: 65 }),
+        hover: async () => {
+          cleared = true
+        },
+        click: async () => {
+          clicks++
+        },
+        dispose: async () => {},
+      }),
+    },
+  ]
+  expect(await attemptTurnstileClick(page as unknown as Page)).toBe(false)
+  expect(clicks).toBe(0)
+})
+
 test("a detached challenge iframe cannot turn a coordinate fallback into a page click", async () => {
   let pageClicks = 0
   let disposed = 0
@@ -280,6 +352,7 @@ test("a detached challenge iframe cannot turn a coordinate fallback into a page 
     locator: () => ({ first: () => ({ isVisible: async () => false }) }),
     frameElement: async () => ({
       boundingBox: async () => ({ x: 10, y: 100, width: 300, height: 65 }),
+      hover: async () => {},
       click: async () => {
         throw new Error("Element is not attached to the DOM")
       },
@@ -330,6 +403,7 @@ test.each(["clicked", "hidden", "detached"])(
           if (state === "detached") throw new Error("Frame detached")
           return state === "hidden" ? null : { x: 0, y: 0, width: 300, height: 65 }
         },
+        hover: async () => {},
         click: async () => {
           if (state !== "clicked") throw new Error("Element is not attached to the DOM")
           clicked++

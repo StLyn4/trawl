@@ -303,8 +303,6 @@ async function runTier2Task(
       status: "success",
       durationMs: Date.now() - start,
       effectiveUrl: page.url(),
-      // For HTML, `html` is the rendered DOM; for non-HTML text it is the raw document. For binary, leave
-      // empty so /scrape consumers know to use `body`/`contentType`.
       html: browserDocumentHtml(captured.contentType, finalHtml, captured.body),
       ...captured,
       cookies,

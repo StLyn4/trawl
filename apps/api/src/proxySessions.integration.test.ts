@@ -4,6 +4,7 @@ import { MemorySessionCache } from "@trawl/browser"
 import { type OrchestratorDeps, ProxyPool } from "@trawl/tiers"
 import type { TierResult } from "@trawl/types"
 import { Elysia } from "elysia"
+import { parseHTML } from "linkedom"
 import { launchAnubisBrowser } from "../../../packages/browser/tests/helpers/anubisBrowser"
 import { MetricsStore } from "./metrics"
 import { scrapeRoute } from "./routes/scrape"
@@ -21,6 +22,22 @@ describe.skipIf(process.env.TRAWL_PROXY_SESSION_TESTS !== "1")("Camoufox proxy s
   const requests: { path: string; proxy: boolean; cookie: string; agent: string }[] = []
   let deps: OrchestratorDeps
   let app: ReturnType<typeof createApp>
+  const renderedText = "Owned rendered results. ".repeat(8)
+  const fragments: Record<string, { source: string; expected: string }> = {
+    "/utf8-fragment": {
+      source:
+        '<!doctype html><link rel="stylesheet" href="data:text/css,div{}"><div id="result" data-ct="第1話">中文内容</div><script>document.body.append(document.createElement("iframe"))</script>',
+      expected: "中文内容",
+    },
+    "/rendered-fragment": {
+      source: `<div id="result">Loading 中文</div><script>document.querySelector('#result').textContent=${JSON.stringify(renderedText)}</script>`,
+      expected: renderedText,
+    },
+    "/solved-fragment": {
+      source: `<div id="challenge-running">Checking your browser 请稍候</div><script>setTimeout(()=>{document.querySelector('script').remove();document.getElementById('challenge-running').remove();const result=document.createElement('main');result.id='result';result.textContent=${JSON.stringify(renderedText)};document.body.append(result)},150)</script>`,
+      expected: renderedText,
+    },
+  }
   const target = (path = "/") => `http://proxy-session.invalid:${origin.port}${path}`
   const createApp = () =>
     new Elysia()
@@ -68,6 +85,7 @@ describe.skipIf(process.env.TRAWL_PROXY_SESSION_TESTS !== "1")("Camoufox proxy s
             },
           )
         }
+        if (fragments[path]) return new Response(fragments[path].source, { headers: { "content-type": "text/html" } })
         return new Response(
           `<html><body><h1>Owned protected content</h1><p>${"Complete results. ".repeat(40)}</p>${path === "/widget" ? '<form><div class="g-recaptcha" data-sitekey="owned-sitekey" data-callback="owned.accept"></div><textarea name="g-recaptcha-response" hidden></textarea></form><script>window.owned={accept(token){if(token==="owned-token")document.body.dataset.accepted="true"}}</script>' : ""}</body></html>`,
           {
@@ -176,6 +194,23 @@ describe.skipIf(process.env.TRAWL_PROXY_SESSION_TESTS !== "1")("Camoufox proxy s
     expect(await page.content()).toContain("Owned protected content")
     await page.close()
   }, 20000)
+
+  test.each(["/scrape", "/v1"])(
+    "preserves static UTF-8 fragments and rendered content through %s",
+    async (route) => {
+      await cache.invalidate("proxy-session.invalid")
+      for (const [path, fixture] of Object.entries(fragments)) {
+        const result = await send(route, target(path), 15000)
+        expect(result.status, JSON.stringify(result.body)).toBe(200)
+        const html = route === "/v1" ? result.body.solution.response : result.body.html
+        const document = parseHTML(html).document
+        expect(document.querySelector("#result")?.textContent).toBe(fixture.expected)
+        expect(document.querySelector("#challenge-running")).toBeNull()
+      }
+      expect(browser.contexts()).toHaveLength(1)
+    },
+    60000,
+  )
 
   test("retains the shared-context fast path for direct cached sessions", async () => {
     deps.proxyPool = undefined

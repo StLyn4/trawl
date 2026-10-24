@@ -123,25 +123,34 @@ export async function waitForChallengeResolution(
 }
 
 export async function attemptTurnstileClick(page: Page, allowKeyboard = true): Promise<boolean> {
+  const canClick = async () =>
+    !allowKeyboard ||
+    CF_CHALLENGE_TITLE.test(await page.title().catch(() => "")) ||
+    isCloudflarePage(await page.content().catch(() => ""), {})
   const frames = page.frames()
   for (const frame of frames) {
     if (!isChallengeFrame(frame)) continue
 
     // A: shadow DOM click via shadowRootUnl patch - real DOM event, resolves faster than coords
-    const shadowClicked = await clickShadowCheckbox(page, frame)
+    const shadowClicked = await clickShadowCheckbox(frame, canClick)
     if (shadowClicked) return true
 
     // B: direct frame DOM (may fail under Firefox Fission cross-origin isolation)
-    const clicked = await clickInFrame(frame)
+    const clicked = await clickInFrame(frame, canClick)
     if (clicked) return true
 
     // C: page-coordinate click - bypasses Fission by clicking on page instead of inside frame
+    if (!(await canClick())) return false
     const frameEl = await frame.frameElement().catch(() => undefined)
     if (!frameEl) continue
     try {
       const box = await frameEl.boundingBox().catch(() => undefined)
-      if (box && box.width > 20) {
-        await frameEl.click({ position: { x: Math.min(24, box.width * 0.15), y: box.height / 2 }, timeout: 1500 })
+      if (box && box.width > 20 && (await canClick())) {
+        const position = { x: Math.min(24, box.width * 0.15), y: box.height / 2 }
+        // Humanized movement can outlive an automatically clearing interstitial.
+        await frameEl.hover({ position, timeout: 1500 })
+        if (!(await canClick())) return false
+        await frameEl.click({ position, timeout: 1500 })
         console.log(`[challenge] Turnstile iframe clicked (${Math.round(box.width)}x${Math.round(box.height)})`)
         return true
       }
@@ -160,8 +169,9 @@ export async function attemptTurnstileClick(page: Page, allowKeyboard = true): P
     try {
       await page.keyboard.press("Tab")
       await new Promise((r) => setTimeout(r, 200))
+      if (!(await canClick())) return false
       await page.keyboard.press("Space")
-      console.log("[challenge] Turnstile keyboard Tab+Space attempted")
+      console.log("[challenge] Cloudflare keyboard verification attempted")
       return true
     } catch {}
   }
@@ -170,7 +180,7 @@ export async function attemptTurnstileClick(page: Page, allowKeyboard = true): P
 }
 
 // Requires: (1) pool.ts injects the shadowRootUnl patch, (2) forceScopeAccess: true in Camoufox config
-async function clickShadowCheckbox(_page: Page, frame: Frame): Promise<boolean> {
+async function clickShadowCheckbox(frame: Frame, canClick: () => Promise<boolean>): Promise<boolean> {
   const handles: Array<{ dispose(): Promise<void> }> = []
   try {
     const handle = await frame
@@ -213,6 +223,7 @@ async function clickShadowCheckbox(_page: Page, frame: Frame): Promise<boolean> 
       if (!checkbox) continue
       const visible = await checkbox.isVisible().catch(() => false)
       if (!visible) continue
+      if (!(await canClick())) return false
       const clicked = await checkbox
         .click({ timeout: 2000 })
         .then(() => true)
@@ -234,7 +245,7 @@ function isChallengeFrame(frame: Frame): boolean {
   return CF_CHALLENGE_ORIGINS.some((o) => url.includes(o))
 }
 
-async function clickInFrame(frame: Frame): Promise<boolean> {
+async function clickInFrame(frame: Frame, canClick: () => Promise<boolean>): Promise<boolean> {
   const selectors = [
     '[role="checkbox"]',
     "role=checkbox",
@@ -248,6 +259,7 @@ async function clickInFrame(frame: Frame): Promise<boolean> {
     try {
       const el = frame.locator(sel).first()
       if (await el.isVisible({ timeout: 400 }).catch(() => false)) {
+        if (!(await canClick())) return false
         await el.click({ timeout: 1500, force: true })
         console.log(`[challenge] Turnstile frame-click: "${sel}"`)
         return true

@@ -39,6 +39,44 @@ describe("responseFromScrapeResult", () => {
     expect(response.headers["content-length"]).toBeUndefined()
   })
 
+  test.each([2, 3, 4] as const)("returns raw HTML fragment bytes from Tier %i", (tier) => {
+    const bytes = Buffer.from('<div data-ct="第1話">中文内容</div>')
+    const response = responseFromScrapeResult(
+      result({
+        tier,
+        html: '<html><body><div data-ct="ç¬¬1è©±">ä¸­æ–‡å†…å®¹</div></body></html>',
+        body: bytes,
+        contentType: "text/html",
+        responseHeaders: {
+          "content-type": "text/html",
+          "content-encoding": "gzip",
+          "content-length": "999",
+        },
+      }),
+    )
+
+    expect(response.body).toEqual(bytes)
+    expect(response.contentType).toBe("text/html")
+    expect(response.headers["content-encoding"]).toBeUndefined()
+    expect(response.headers["content-length"]).toBeUndefined()
+  })
+
+  test("keeps the solved DOM instead of a charset-less scripted challenge fragment", () => {
+    const html = "<html><body>Owned protected content</body></html>"
+    const response = responseFromScrapeResult(
+      result({
+        html,
+        body: Buffer.from('<div id="challenge-running">Checking your browser 中文</div><script>solve()</script>'),
+        contentType: "text/html",
+        responseHeaders: { "content-type": "text/html", "content-length": "999" },
+      }),
+    )
+
+    expect(response.body.toString()).toBe(html)
+    expect(response.contentType).toBe("text/html; charset=utf-8")
+    expect(response.headers["content-length"]).toBeUndefined()
+  })
+
   test.each([2, 3, 4] as const)("strips stale representation headers from decoded Tier %i bodies", (tier) => {
     const decoded = Buffer.from('{"ok":true}')
     const response = responseFromScrapeResult(

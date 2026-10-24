@@ -19,8 +19,8 @@ For security issues, **do not open a public issue** - see [SECURITY.md](SECURITY
 
 Requirements depend on the workspace:
 
-- **API and shared packages:** Bun 1.4.3 is the runtime and package manager.
-- **Web and docs:** Node.js 26 runs the Nuxt and VitePress build tools; Bun installs dependencies.
+- **API and shared packages:** Bun 1.4.4 is the runtime and package manager.
+- **Web and docs:** Node.js 26.12.1 runs the Nuxt and VitePress build tools; Bun installs dependencies.
 - **Integration tests:** Docker provides Redis and the Linux browser environment.
 
 The scraper service runs on Bun. Its Docker runtime does not require Node.js.
@@ -106,8 +106,8 @@ Raw text browser integration tests use owned HTTP fixtures and a local forward p
 TRAWL_RAW_TEXT_TESTS=1 CAMOUFOX_INSTALL_DIR=/path/to/camoufox bun test packages/browser/tests/rawText.integration.test.ts
 ```
 
-They check TXT, JSON, XML, whitespace, empty files and declared charsets in browser
-tiers, plus rejection of empty HTML and HTTP blocks.
+They check TXT, JSON, XML, charset-less HTML fragments, whitespace, empty files and
+declared charsets in browser tiers, plus rejection of empty HTML and HTTP blocks.
 
 Firefox preference integration tests cover both headless and virtual-display pools:
 

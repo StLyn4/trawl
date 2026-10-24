@@ -22,7 +22,7 @@ on:
       tag:
         description: 'Docker tag to push (e.g. "baseline", "1.0.0-baseline")'
         required: false
-        default: 'baseline'
+        default: "baseline"
   push:
     tags:
       - "v*"

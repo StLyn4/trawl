@@ -63,8 +63,12 @@ orchestrator used by `POST /scrape`:
 3. fresh browser challenge solve;
 4. residential proxy solve, when configured.
 
-For browser-tier HTML responses, the proxy returns the rendered solved DOM rather than the original
-challenge response. Binary responses use the raw response bytes when the winning tier exposes them.
+For browser-tier complete HTML documents, the proxy returns the rendered solved DOM rather than the
+original challenge response. Charset-less UTF-8 HTML fragments with non-ASCII content use the captured
+response bytes instead of a serialized browser DOM. Fragments with a doctype, scripts, or event handlers
+require matching rendered content and styles. Passive injected scripts are ignored for this comparison;
+changed content, solved challenges, embedded documents, and complete HTML documents retain the rendered DOM.
+Binary responses use the raw response bytes when the winning tier exposes them.
 
 A hostname that produced a supported challenge wall is cached for five minutes. During that window,
 later requests for the hostname skip Tier 0 and go directly to the tiered solver.

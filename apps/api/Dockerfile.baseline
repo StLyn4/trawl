@@ -1,5 +1,5 @@
 # Stage 1: install workspace deps (runs natively on build host)
-FROM oven/bun:1.4.3 AS deps
+FROM oven/bun:1.4.4 AS deps
 WORKDIR /app
 
 # nodejs/python3/make/g++ are needed to compile better-sqlite3 (camoufox-js dep)
@@ -40,7 +40,7 @@ RUN bun install --frozen-lockfile --production --omit=dev --linker=hoisted \
          node_modules/impit-win32-*
 
 # Stage 2: fetch the Camoufox Firefox binary (pinned version)
-FROM oven/bun:1.4.3 AS camoufox
+FROM oven/bun:1.4.4 AS camoufox
 ENV CAMOUFOX_INSTALL_DIR=/opt/camoufox
 
 ARG UBO_VERSION=1.75.0
@@ -123,7 +123,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends curl unzip binu
 # arm64 has no baseline variant - every armv8 CPU is supported by the standard
 # `bun-linux-aarch64.zip` binary.
 ARG TARGETARCH
-ARG BUN_VERSION=1.4.3
+ARG BUN_VERSION=1.4.4
 RUN set -eux; \
     case "$TARGETARCH" in \
       amd64) BUN_ZIP=bun-linux-x64-baseline.zip ;; \

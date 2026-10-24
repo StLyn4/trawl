@@ -105,7 +105,8 @@ function redactUrl(rawUrl: string): string {
 }
 
 function extractReadable(html: string, url: string, format: "markdown" | "text") {
-  const { document } = parseHTML(html)
+  let { document } = parseHTML(html)
+  if (document.documentElement?.localName !== "html") document = parseHTML(`<html><body>${html}</body></html>`).document
   const parsed = new Readability(document as unknown as Document).parse()
   const title = parsed?.title?.trim() || document.title?.trim() || url
   const articleHtml = parsed?.content || document.body?.innerHTML || html

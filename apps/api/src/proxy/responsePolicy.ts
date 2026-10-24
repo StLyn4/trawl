@@ -1,3 +1,4 @@
+import { isCharsetLessUtf8HtmlFragment } from "@trawl/tiers"
 import type { BlockedEvidence, ScrapeResult } from "@trawl/types"
 
 export interface ProxyBufferedResponse {
@@ -41,7 +42,10 @@ export function responseFromScrapeResult(result: ScrapeResult): ProxyBufferedRes
   const upstreamContentType =
     result.contentType ?? result.responseHeaders?.["content-type"] ?? "text/html; charset=utf-8"
   const useRenderedHtml =
-    isHtml(upstreamContentType) && result.html.length > 0 && (result.tier >= 2 || result.body === undefined)
+    isHtml(upstreamContentType) &&
+    result.html.length > 0 &&
+    (result.tier >= 2 || result.body === undefined) &&
+    !isCharsetLessUtf8HtmlFragment(upstreamContentType, result.body, result.html)
   const contentType = useRenderedHtml ? utf8ContentType(upstreamContentType) : upstreamContentType
   // Playwright exposes browser response bodies after content decoding while
   // retaining the upstream representation headers. Those headers cannot be

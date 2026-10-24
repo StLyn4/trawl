@@ -1,5 +1,5 @@
 # Stage 1: install workspace deps (runs natively on build host)
-FROM oven/bun:1.4.3 AS deps
+FROM oven/bun:1.4.4 AS deps
 WORKDIR /app
 
 # nodejs/python3/make/g++ are needed to compile better-sqlite3 (camoufox-js dep)
@@ -40,7 +40,7 @@ RUN bun install --frozen-lockfile --production --omit=dev --linker=hoisted \
          node_modules/impit-win32-*
 
 # Stage 2: fetch the Camoufox Firefox binary (pinned version)
-FROM oven/bun:1.4.3 AS camoufox
+FROM oven/bun:1.4.4 AS camoufox
 ENV CAMOUFOX_INSTALL_DIR=/opt/camoufox
 
 ARG UBO_VERSION=1.75.0
@@ -115,7 +115,7 @@ RUN curl -fsSL \
     test "$(bun -e 'console.log(JSON.parse(await Bun.file("/opt/camoufox/addons/UBO/manifest.json").text()).version)')" = "${UBO_VERSION}" && \
     rm /tmp/ubo.xpi
 
-FROM oven/bun:1.4.3 AS bun-runtime
+FROM oven/bun:1.4.4 AS bun-runtime
 RUN apt-get update && apt-get install -y --no-install-recommends binutils \
  && strip --strip-all /usr/local/bin/bun
 
