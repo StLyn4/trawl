@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Mark generated MITM proxy failures with `Proxy-Status` so nested `/scrape` and `/v1` requests report a proxy error instead of accepting a timeout response as scraped content. Preserve origin error responses and document the proxy's independent deadline (#254).
+
 ## [1.9.3] - 2026-10-24
 
 ### Security
